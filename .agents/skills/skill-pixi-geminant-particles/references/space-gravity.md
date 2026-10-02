@@ -1,0 +1,31 @@
+# Simulation Space and Gravity
+
+Main simulationSpace is local/world, defaulting to local. gravityModifier is a finite signed constant, defaulting to 0; 0 disables gravity and negative values reverse it. Both main/core inputs support these fields; field definitions belong only to the [JSON Contract](effect.schema.json). The gravity baseline is not in JSON: the host injects a vector in game-world pixels/second². There is no default 9.81, gravitySource, custom space, or scalingMode parameter. Recreate the instance to change modes.
+
+## Pure Core Environment
+
+CreateParticleEffectOptions.environment is ParticleEffectEnvironment{gravity?:{x,y},getEmitterTransform?:()=>{a,b,c,d,tx,ty}}. compileParticleEffectConfig(config,environment?) compiles configuration; the second argument may be omitted for pure validation. Actual world creation requires an explicit getter; nonzero gravityModifier requires explicit gravity. local without a getter uses identity. gravity is copied at creation and does not follow later mutations to the input vector.
+
+Core ParticleEnvironment.sample returns the current ParticleEnvironmentSnapshot{emitterTransform,gravity}, supplied by an independent factory. Affine A=[a c tx;b d ty] and vectors must be closed plain objects with own enumerable finite data properties. The affine must be nonsingular with a finite inverse matrix. snapshotParticleAffineTransform/snapshotParticleVector2 return independent frozen copies.
+
+The environment is sampled once per update and stays constant throughout that dt. Transforms are not interpolated and emitter movement velocity is not inherited. A world birth point is A*(origin+shape), and its initial velocity is A's linear part*initial velocity. local births and velocities are emitter-local. startRotation/Scale are set in the selected simulation basis: world visual initial values do not additionally inherit emitter pose; the local render container A inherits the emitter's visual rotation/scale. forceOverLifetime components use the simulation basis. Gravity=world baseline*modifier; local converts it through A's inverse linear part, then adds force. The sole KinematicMotion owner performs analytic integration.
+
+setOrigin is always emitter-local and affects only future births. world is the game-world reference, not screen coordinates; camera transforms do not alter simulated paths. Existing world particles do not follow emitter movement; existing local particles follow the emitter's visual pose.
+
+Low-level PointSpawn transforms origin+offset position and velocityXY linear components in world. LinearMotion only performs constant-velocity x/y updates and explicitly rejects nonzero gravityModifier; use KinematicMotion for gravity. Core does not automatically add potentially conflicting motion modules; the composition compiler supplies the sole KinematicMotion.
+
+## Pixi Space Bindings
+
+fixed/frame facades and entity use PixiParticleSpaceOptions{space?:PixiParticleSpaceBindings{emitter:Container,world:Container},gravity?:ParticleVector2}. These are runtime parameters, not JSON fields. CreatePixiParticleEffectOptions/CreatePixiFrameParticleEffectOptions/CreatePixiParticleEntityOptions and low-level PixiParticleSystemOptions all accept them. world or a nonzero modifier requires space; a nonzero modifier requires explicit gravity. Providing gravity requires space even when modifier is 0. Missing parameters are rejected before resolver calls. Low-level custom environment and space/gravity are mutually exclusive; environment snapshot supplies its own gravity, and conflicting inputs are explicitly rejected rather than ignored. world must be an ancestor of emitter or emitter itself. Fresh getGlobalTransform values produce emitter→world A; both reference transforms must be finite and nonsingular.
+
+With space, the SDK automatically attaches output to space.world and owns rendering transforms. fixed/frame local output uses A and world output uses identity. entity root uses identity, with mixed local child=A/world child=identity in JSON layer order. local/0 without space may be attached freely. The host moves a separate emitter; do not reattach or alter SDK output root/child transforms. world visual rotation/scale use the world basis; local inherits emitter visual pose, which does not imply support for all Unity scalingMode behavior.
+
+update(0) or paused update only refreshes current space render pose, without advancing age/emission/particle hooks or rendererSync. destroy detaches owned output; the host retains emitter/world/parent containers/texture Source. Actual draw errors still require the host to stop its own advancement and rethrow.
+
+Space binding preserves the complete affine matrix, supporting negative scale, reflection, rotation, and skew. Pixi setFromMatrix can represent a reflection with negative scale.x and an equivalent rotation. Component readback values are not the space contract; compare matrices or transformed coordinates to assess pose. World births and local inverse-matrix gravity use the same complete A, without compensating again from decomposed scale signs.
+
+Particle rendering inherits alpha and tint multiplication from Pixi ancestor render groups. The host may fade or tint an entire effect through parent containers. Particle alpha/tint still come from simulation and appearance modules; the SDK does not write parent colors back into these values or multiply them again. Parent alpha/tint affect drawing only, not lifetime, emission, or motion.
+
+The [dual-space droplet recipe](../assets/space-gravity.effect.json) has two layers: world gravity and a local negative modifier, each with explicit bounds and a shared single-frame source. The resolver supplies a droplet Texture; the runtime call supplies space and required gravity, for example {x:0,y:400}. That vector is the caller's chosen world gravity baseline, not an SDK default. JSON validation needs no environment binding; creation checks all runtime prerequisites.
+
+Trails worldSpace=true requires runtime space even with local Main, transforms sampled points into world, and retains them there. false follows the Main basis. The SDK separately manages body and trail output poses; see [Trails](trails.md).

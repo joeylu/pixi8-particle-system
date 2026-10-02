@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "id": "water-space-gravity",
+  "textureSets": [
+    {
+      "id": "droplet-texture",
+      "textures": [
+        {
+          "asset": "droplet"
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "id": "world-drops",
+      "origin": {
+        "x": -20,
+        "y": 0
+      },
+      "activation": {
+        "mode": "continuous"
+      },
+      "main": {
+        "maxParticles": 128,
+        "maxBirthsPerUpdate": 128,
+        "startLifetime": 1,
+        "startSpeed": 40,
+        "startScale": 0.3,
+        "startRotation": 0,
+        "startTint": 5737983,
+        "startAlpha": 0.8,
+        "randomSeed": 42,
+        "simulationSpace": "world",
+        "gravityModifier": 1
+      },
+      "modules": {
+        "emission": {
+          "rateOverTime": 12
+        },
+        "shape": {
+          "shapeType": "point",
+          "directionRadians": -1.5707963267948966,
+          "spreadRadians": 0.2
+        },
+        "forceOverLifetime": {
+          "x": 0,
+          "y": 0
+        },
+        "colorOverLifetime": {
+          "endAlphaFactor": 0
+        },
+        "textureSheetAnimation": {
+          "selectionMode": "single",
+          "index": 0
+        }
+      },
+      "renderer": {
+        "textureSet": "droplet-texture",
+        "blendMode": "normal",
+        "boundsArea": {
+          "x": -500,
+          "y": -500,
+          "width": 1000,
+          "height": 1000
+        }
+      }
+    },
+    {
+      "id": "local-drops",
+      "origin": {
+        "x": 20,
+        "y": 0
+      },
+      "activation": {
+        "mode": "continuous"
+      },
+      "main": {
+        "maxParticles": 128,
+        "maxBirthsPerUpdate": 128,
+        "startLifetime": 1,
+        "startSpeed": 40,
+        "startScale": 0.3,
+        "startRotation": 0,
+        "startTint": 5737983,
+        "startAlpha": 0.8,
+        "randomSeed": 42,
+        "simulationSpace": "local",
+        "gravityModifier": -0.25
+      },
+      "modules": {
+        "emission": {
+          "rateOverTime": 12
+        },
+        "shape": {
+          "shapeType": "point",
+          "directionRadians": -1.5707963267948966,
+          "spreadRadians": 0.2
+        },
+        "forceOverLifetime": {
+          "x": 0,
+          "y": 0
+        },
+        "colorOverLifetime": {
+          "endAlphaFactor": 0
+        },
+        "textureSheetAnimation": {
+          "selectionMode": "single",
+          "index": 0
+        }
+      },
+      "renderer": {
+        "textureSet": "droplet-texture",
+        "blendMode": "normal",
+        "boundsArea": {
+          "x": -500,
+          "y": -500,
+          "width": 1000,
+          "height": 1000
+        }
+      }
+    }
+  ]
+}

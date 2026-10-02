@@ -1,0 +1,11 @@
+{
+  "name": "geminant-particles",
+  "version": "0.1.0",
+  "interfaceContractVersion": 1,
+  "jsonSchemaVersion": 1,
+  "pixiPeerRange": "^8.21.0",
+  "javascriptTarget": "ES2020",
+  "moduleFormat": "ESNext",
+  "declarations": true,
+  "entries": { ".": "pure", "./core": "pure", "./config": "pure", "./pixi": "pixi" }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Geminant Particles"
+  short_description: "Design particle JSON or integrate Geminant effects"
+  default_prompt: "Use $skill-pixi-geminant-particles to follow my task: design and validate particle JSON, or integrate and verify its runtime."

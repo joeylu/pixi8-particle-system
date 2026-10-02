@@ -1,0 +1,20 @@
+{
+  "name": "geminant-particles",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": { "types": "./dist/entries/core.d.ts", "import": "./dist/entries/core.js" },
+    "./core": { "types": "./dist/entries/core.d.ts", "import": "./dist/entries/core.js" },
+    "./config": { "types": "./dist/entries/config.d.ts", "import": "./dist/entries/config.js" },
+    "./pixi": { "types": "./dist/entries/pixi.d.ts", "import": "./dist/entries/pixi.js" }
+  },
+  "files": ["dist", "module-contract.json"],
+  "peerDependencies": { "pixi.js": "^8.21.0" },
+  "devDependencies": { "typescript": "^5.9.3" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "node scripts/build.mjs --typecheck",
+    "prepack": "node scripts/build.mjs"
+  }
+}
