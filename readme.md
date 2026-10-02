@@ -1,6 +1,6 @@
 # pixi8-particle-system
 
-Particle effect logic for PixiJS 8.
+Modular particle effect logic compatible with PixiJS 8 `ParticleContainer`, with gravity, manual emit/bursts, projectile effects, trails, and a static Particle Lab demo.
 
 PixiJS 8's `ParticleContainer` provides efficient particle rendering. This project adds emission, motion, appearance changes, lifetime management, playback controls, and resource cleanup. The host supplies textures and time steps; the system computes particle state, and the Pixi adapter synchronizes it with the rendering component.
 
@@ -13,6 +13,7 @@ PixiJS 8's `ParticleContainer` provides efficient particle rendering. This proje
 - Single textures, sequence animation, random frames, and grid texture slicing.
 - Layered JSON effects with strict parsing and validation.
 - Trails and local/world simulation spaces.
+- Projectile effect recipes: flying light particles, smoke paths, and glowing heads with trails.
 - Play, pause, resume, stop and drain, reset, and destroy.
 - Bounded particle pooling and extensible behaviors, lifecycle observers, and renderers.
 
@@ -130,8 +131,45 @@ Use `createPixiParticleEffect` for a single texture, `createPixiFrameParticleEff
 - [Trails](.agents/skills/skill-pixi-geminant-particles/references/trails.md)
 - [Configuration examples](.agents/skills/skill-pixi-geminant-particles/assets/)
 
-## Interactive demo
+## Static Particle Lab demo
 
-The [Vite demo](example/README.md) supports pointer-controlled emission, pause/resume, and reset. It uses the existing local package build. From `example`, run `npm install` and `npm run dev`.
+The [Particle Lab](example/README.md) is a static Vite website with a live WebGL preview and a modular Inspector. It supports gravity, manual **Emit burst**, trails, local/world simulation, draggable emitters, pause/resume, restart, stop-and-drain, and simulation speed controls. Optional modules can be enabled independently, and parameter changes rebuild the effect.
 
-The repository includes the runtime library, build artifacts, configuration documentation, and demo. It does not include a standalone visual effect editor. Actual GPU rendering and visual behavior require verification in a host Pixi scene.
+Four starting presets are included: **Embers**, **Water fountain**, **Soft smoke**, and **Dust & debris**. The renderer offers 11 supplied textures. The current editor targets a single emitter and single-frame textures; the runtime also supports layered effects and frame animation.
+
+From `example`, run:
+
+```sh
+npm install
+npm run dev
+node --test src/editor-model.test.js
+npm run build
+npm run preview
+```
+
+The production build is written to `example/dist/` and uses relative asset paths for static hosting. The demo uses the existing local package build in `geminum-particles/dist`. This repository includes the website source; the [demo directory](https://github.com/joeylu/pixi8-particle-system/tree/main/example) is not a hosted live demo.
+
+### Screenshots
+
+Particle Lab overview with the modular Inspector:
+
+![Particle Lab overview](example/screenshots/particle-lab.jpg)
+
+Water fountain with host gravity and a gravity modifier:
+
+![Gravity-driven water fountain](example/screenshots/gravity-fountain.jpg)
+
+Manual emit/burst with trails enabled:
+
+![Manual emit and particle trails](example/screenshots/emit-trails.jpg)
+
+## Projectile effects
+
+Projectile effects are composed from the same emission, motion, lifetime, simulation-space, and trail modules. Projectile is an effect use case rather than a separate runtime module. The bundled recipes cover a flying light projectile, a moving emitter leaving smoke, and a glowing head with smoke and trails:
+
+- [Flying light projectile](.agents/skills/skill-pixi-geminant-particles/assets/projectile-trail.effect.json)
+- [Projectile smoke path](.agents/skills/skill-pixi-geminant-particles/assets/projectile-smoke.effect.json)
+- [Smoke, glowing head, and trail](.agents/skills/skill-pixi-geminant-particles/assets/projectile-smoke-glow.effect.json)
+- [Recipe integration notes](.agents/skills/skill-pixi-geminant-particles/references/recipes.md)
+
+The host supplies launch position, direction, trigger timing, textures, and any external emitter route. These JSON recipes are runtime examples; they are not additional presets in the current Particle Lab interface.

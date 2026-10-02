@@ -1,34 +1,52 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0b1018" />
-    <title>Pixi 8 · Particle Example</title>
-  </head>
-  <body>
-    <main class="example">
-      <header>
-        <span class="eyebrow">PIXI 8 / EXAMPLE 01</span>
-        <h1>Particle playground<span>.</span></h1>
-        <p>A live particle demo powered by PixiJS and geminant-particles.</p>
-      </header>
-      <section class="preview" aria-label="Particle preview">
-        <div class="preview-toolbar">
-          <span id="status" role="status">Initializing…</span>
-          <span><strong id="count">0</strong> particles</span>
-        </div>
-        <div id="stage"></div>
-        <div class="preview-footer">
-          <span>Move the pointer over the canvas to change the emission position</span>
-          <div class="controls">
-            <button id="toggle" type="button" disabled>Pause</button>
-            <button id="reset" type="button" disabled>Reset</button>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#141819" />
+  <title>Particle Lab · Particle System</title>
+</head>
+<body>
+  <main id="app" class="editor-shell">
+    <header class="app-header">
+      <div class="brand"><span class="brand-mark">G</span><span class="brand-label">/ PARTICLE LAB</span><span class="version-badge">PIXI <span id="version">8</span></span></div>
+      <h1>Particle System</h1><span class="workspace-kind">SINGLE EMITTER</span>
+    </header>
+    <div id="error-banner" class="error-banner" role="alert" hidden><span id="error-message"></span><button id="dismiss-error" type="button">Dismiss</button></div>
+    <div id="workspace" class="workspace">
+      <section class="preview-panel" aria-label="Particle scene">
+        <header class="viewport-header">
+          <div class="viewport-heading"><h2>Scene preview</h2><span>2D / WebGL</span></div>
+          <div class="viewport-options">
+            <label><input id="grid-toggle" type="checkbox" checked /> Grid</label>
+            <label><input id="follow-pointer" type="checkbox" /> Follow pointer</label>
+            <button id="center" type="button">Center</button>
           </div>
+        </header>
+        <div id="stage" class="viewport show-grid" aria-label="Particle preview. Drag to move the emitter.">
+          <div id="emitter-marker" class="emitter-marker" aria-hidden="true"></div><span class="viewport-caption">Drag to move emitter</span>
         </div>
+        <footer class="transport">
+          <div class="transport-actions">
+            <button id="toggle" class="primary-button" type="button" disabled>Pause</button>
+            <button id="restart" type="button" disabled>Restart</button>
+            <button id="stop" type="button" disabled>Stop</button>
+            <button id="burst" type="button" disabled>Emit burst</button>
+            <select id="time-scale" aria-label="Simulation speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select>
+          </div>
+          <div class="preview-stats"><span id="status" role="status">Initializing…</span><span><strong id="count">0</strong> particles</span><span><strong id="fps">0</strong> fps</span><span><strong id="elapsed">0.0</strong> s</span></div>
+        </footer>
+        <section class="preset-section" aria-labelledby="presets-title">
+          <div class="section-heading"><h2 id="presets-title">STARTING POINTS</h2><span>Choose a preset to begin</span></div><div id="presets" class="preset-grid"></div>
+        </section>
       </section>
-      <footer><span>Vite + ES modules</span><span>PixiJS <span id="version">8</span></span></footer>
-    </main>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+      <aside class="inspector" aria-labelledby="inspector-title">
+        <header class="inspector-header"><div><h2 id="inspector-title">Inspector <span id="module-count" class="module-count">9 modules</span></h2><p id="preset-name">Embers</p></div><button id="reset-settings" type="button">Reset preset</button></header>
+        <div id="inspector-modules" class="inspector-modules"></div>
+        <footer class="inspector-footer"><span class="hint-dot" aria-hidden="true"></span>Changes restart the simulation.</footer>
+      </aside>
+    </div>
+  </main>
+  <script type="module" src="/src/main.js"></script>
+</body>
 </html>
