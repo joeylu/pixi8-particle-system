@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b1018" />
+    <title>Pixi 8 · Particle Example</title>
+  </head>
+  <body>
+    <main class="example">
+      <header>
+        <span class="eyebrow">PIXI 8 / EXAMPLE 01</span>
+        <h1>Particle playground<span>.</span></h1>
+        <p>A live particle demo powered by PixiJS and geminant-particles.</p>
+      </header>
+      <section class="preview" aria-label="Particle preview">
+        <div class="preview-toolbar">
+          <span id="status" role="status">Initializing…</span>
+          <span><strong id="count">0</strong> particles</span>
+        </div>
+        <div id="stage"></div>
+        <div class="preview-footer">
+          <span>Move the pointer over the canvas to change the emission position</span>
+          <div class="controls">
+            <button id="toggle" type="button" disabled>Pause</button>
+            <button id="reset" type="button" disabled>Reset</button>
+          </div>
+        </div>
+      </section>
+      <footer><span>Vite + ES modules</span><span>PixiJS <span id="version">8</span></span></footer>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

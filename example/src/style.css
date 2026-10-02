@@ -1,0 +1,34 @@
+:root {
+  font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif;
+  color: #e7edf6;
+  background: #0b1018;
+  font-synthesis: none;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+.example { width: min(1120px, calc(100% - 64px)); margin: 64px auto 32px; }
+.eyebrow { color: #8bb9a8; font-size: 11px; font-weight: 600; letter-spacing: 2.5px; }
+h1 { margin: 18px 0 12px; font-size: clamp(30px, 5vw, 52px); letter-spacing: -2px; font-weight: 600; }
+h1 span { color: #a5efd2; }
+header p { color: #8492a6; font-size: 14px; margin: 0 0 34px; }
+.preview { border: 1px solid #25303e; border-radius: 14px; overflow: hidden; background: #0d1420; }
+.preview-toolbar, .preview-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 17px 22px; font-size: 12px; color: #8d9aae; }
+.preview-toolbar { border-bottom: 1px solid #202a37; }
+.preview-toolbar strong { color: #d1e7dc; font-variant-numeric: tabular-nums; font-weight: 500; }
+#status { color: #a5efd2; }
+#stage { height: min(54vh, 480px); min-height: 280px; position: relative; touch-action: none; }
+#stage canvas { display: block; width: 100%; height: 100%; }
+.preview-footer { border-top: 1px solid #202a37; }
+.controls { display: flex; gap: 8px; }
+button { font: inherit; color: #d8e4f0; border: 1px solid #344355; border-radius: 7px; padding: 8px 18px; background: #172231; cursor: pointer; }
+button:hover { background: #233448; border-color: #769486; }
+button:focus-visible { outline: 2px solid #a5efd2; outline-offset: 3px; }
+button:disabled { opacity: .4; cursor: wait; }
+.example > footer { display: flex; justify-content: space-between; margin-top: 18px; color: #607084; font-size: 11px; }
+@media (max-width: 600px) {
+  .example { width: calc(100% - 32px); margin-top: 36px; }
+  .preview-toolbar, .preview-footer { padding: 14px; }
+  .preview-footer { align-items: flex-start; flex-direction: column; }
+}
