@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "id": "projectile-smoke-glow",
+  "textureSets": [
+    {
+      "id": "smoke",
+      "grid": {
+        "asset": "smoke4x4",
+        "numTilesX": 4,
+        "numTilesY": 4
+      }
+    },
+    {
+      "id": "glow",
+      "textures": [
+        {
+          "asset": "spark-glow"
+        }
+      ]
+    },
+    {
+      "id": "ribbon",
+      "textures": [
+        {
+          "asset": "trail-glow"
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "id": "smoke",
+      "main": {
+        "maxParticles": 64,
+        "maxBirthsPerUpdate": 64,
+        "startLifetime": 0.8,
+        "startSpeed": {
+          "min": 6,
+          "max": 14
+        },
+        "startScale": {
+          "min": 0.3,
+          "max": 0.5
+        },
+        "startRotation": {
+          "min": 0,
+          "max": 6.283185307179586
+        },
+        "startTint": 11184810,
+        "startAlpha": 0.45,
+        "randomSeed": 11,
+        "simulationSpace": "world"
+      },
+      "modules": {
+        "emission": {
+          "rateOverTime": 40
+        },
+        "shape": {
+          "shapeType": "circle",
+          "radius": 2,
+          "spreadRadians": 6.283185307179586
+        },
+        "textureSheetAnimation": {
+          "selectionMode": "random"
+        },
+        "sizeOverLifetime": {
+          "endScaleFactor": 2
+        },
+        "colorOverLifetime": {
+          "endAlphaFactor": 0
+        }
+      },
+      "renderer": {
+        "textureSet": "smoke",
+        "blendMode": "normal"
+      }
+    },
+    {
+      "id": "moving-glow",
+      "main": {
+        "maxParticles": 1,
+        "maxBirthsPerUpdate": 1,
+        "startLifetime": 1,
+        "startSpeed": 0,
+        "startScale": 0.3,
+        "startTint": 16755268,
+        "startAlpha": 1,
+        "randomSeed": 7,
+        "simulationSpace": "local"
+      },
+      "modules": {
+        "shape": {
+          "shapeType": "point"
+        },
+        "textureSheetAnimation": {
+          "selectionMode": "single"
+        },
+        "trails": {
+          "lifetime": 0.35,
+          "minVertexDistance": 2,
+          "worldSpace": true,
+          "width": 8,
+          "maxPointsPerTrail": 64,
+          "maxTrails": 1,
+          "breakDistance": 128,
+          "dieWithParticles": false,
+          "textureMode": "stretch"
+        },
+        "emission": {
+          "rateOverTime": 0,
+          "duration": 0,
+          "bursts": [
+            {
+              "time": 0,
+              "count": 1
+            }
+          ]
+        }
+      },
+      "renderer": {
+        "textureSet": "glow",
+        "blendMode": "add",
+        "trail": {
+          "textureSet": "ribbon",
+          "blendMode": "add",
+          "tint": 16755268,
+          "alpha": 0.8
+        }
+      }
+    }
+  ]
+}

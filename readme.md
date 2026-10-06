@@ -1,36 +1,59 @@
 # pixi8-particle-system
 
-Modular particle effect logic for PixiJS 8 `ParticleContainer`.
+Geminant is a modular 2D effects runtime built for PixiJS 8's `ParticleContainer`. It adds emission, motion, gravity, lifetime and playback control to Pixi's particle rendering.
 
-Pixi handles rendering; this library adds emission, motion, lifetime, and playback control.
+## Features
 
-- Compatible with PixiJS 8 `ParticleContainer`.
-- Composable modules for spawning, motion, color, size, rotation, and trails.
-- Gravity, continuous emission, and manual `emit(count)` bursts.
-- Projectile effects with smoke and trails; local/world simulation.
-- A static Particle Lab website for exploring effects and adjusting parameters.
+- Continuous emission, timed bursts, delayed starts, finite effects and looping.
+- Per-particle lifetime and appearance ranges, gravity, force and drag.
+- Local/world simulation, trails, animated frames and layered effects.
+- Coordinated playback and draining, including projectile heads that end on impact while smoke and retained trails finish.
 
-## Particle Lab
+Particle and Projectile effects share one runtime and JSON configuration contract. Particle covers fixed/local effects and standalone launch flashes or impacts. Projectile covers flying bodies, effects following a moving source and two-end connections. The host supplies movement, hit events and endpoint adaptation.
 
-Live preview, modular Inspector, four presets, and controls for gravity, emit, and trails.
+## Particle & Projectile Labs
 
-![Particle Lab](example/screenshots/particle-lab.jpg)
+Two workspaces with editable modules, playback controls and JSON export:
 
-![Gravity, emit, and trails](example/screenshots/emit-trails.jpg)
+### Particle Lab
 
-## Run the demo
+Embers, water fountain, soft smoke and dust/debris, with emitter dragging and manual bursts.
+
+![Particle Lab](example/screenshots/particle-lab-2026-10-06.jpg)
+
+### Projectile Lab
+
+Energy bolt, fireball and meteor, with layered heads/trails, movable endpoints and launch/hit controls.
+
+![Projectile Lab](example/screenshots/projectile-lab-2026-10-06.jpg)
+
+## Build and run
+
+Build the runtime first:
 
 ```sh
-cd example
+cd geminum-particles
+npm install
+npm run build
+npm test
+```
+
+Then start the example:
+
+```sh
+cd ../example
 npm install
 npm run dev
 ```
 
-For static hosting, run `npm run build` and deploy `example/dist/`.
+For static hosting, run `npm run build` in `example/` and deploy `example/dist/`. See [example controls and setup](example/README.md).
 
-## Documentation
+The package name is `geminant-particles`, with `/core`, `/config` and `/pixi` entry points for simulation, JSON configuration and Pixi rendering.
 
-- [Demo setup and controls](example/README.md)
-- [Library integration and API](.agents/skills/skill-pixi-geminant-particles/references/runtime-integration.md)
-- [Effect configuration](.agents/skills/skill-pixi-geminant-particles/references/effect-contract.md)
-- [Projectile and smoke recipes](.agents/skills/skill-pixi-geminant-particles/references/recipes.md)
+## Agent skills
+
+- [Particle creation](.agents/skills/skill-geminum-particle/SKILL.md): design fixed/local effects, select textures and generate configuration.
+- [Projectile creation](.agents/skills/skill-geminum-projectile/SKILL.md): design moving/connecting effects and plan host movement and impact handoff.
+- [Runtime development](.agents/skills/skill-pixi-geminant-particles/SKILL.md): integrate, extend and diagnose the SDK.
+
+Both creator skills use the [shared JSON Schema](.agents/skills/skill-geminum-particle/references/effect.schema.json) and [configuration semantics](.agents/skills/skill-geminum-particle/references/effect-contract.md). Distribute the three skill folders together to preserve their links.

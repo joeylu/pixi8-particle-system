@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "id": "fire-grid",
+  "textureSets": [
+    {
+      "id": "smoke-textures",
+      "grid": {
+        "asset": "smoke4x4",
+        "numTilesX": 4,
+        "numTilesY": 4
+      }
+    },
+    {
+      "id": "flame-frames",
+      "grid": {
+        "asset": "flame4x4",
+        "numTilesX": 4,
+        "numTilesY": 4
+      }
+    },
+    {
+      "id": "spark-texture",
+      "textures": [
+        {
+          "asset": "spark"
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "id": "smoke",
+      "origin": {
+        "x": 0,
+        "y": -8
+      },
+      "modules": {
+        "emission": {
+          "rateOverTime": 8
+        },
+        "shape": {
+          "radius": 6,
+          "directionRadians": -1.5707963267948966,
+          "spreadRadians": 0.3,
+          "offsetX": 0,
+          "offsetY": 0,
+          "shapeType": "circle"
+        },
+        "sizeOverLifetime": {
+          "endScaleFactor": 2
+        },
+        "colorOverLifetime": {
+          "endAlphaFactor": 0
+        },
+        "rotationOverLifetime": {
+          "z": 0
+        },
+        "forceOverLifetime": {
+          "x": 0,
+          "y": 0
+        },
+        "textureSheetAnimation": {
+          "selectionMode": "random"
+        }
+      },
+      "renderer": {
+        "textureSet": "smoke-textures",
+        "blendMode": "add"
+      },
+      "main": {
+        "maxParticles": 64,
+        "startSpeed": {
+          "min": 8,
+          "max": 16
+        },
+        "startScale": {
+          "min": 0.4,
+          "max": 0.7
+        },
+        "startTint": 10066329,
+        "startAlpha": 0.5,
+        "maxBirthsPerUpdate": 64,
+        "startLifetime": 2,
+        "startRotation": 0,
+        "randomSeed": 101
+      }
+    },
+    {
+      "id": "flame",
+      "modules": {
+        "emission": {
+          "rateOverTime": 20
+        },
+        "shape": {
+          "width": 12,
+          "height": 4,
+          "directionRadians": -1.5707963267948966,
+          "spreadRadians": 0.4,
+          "offsetX": 0,
+          "offsetY": 0,
+          "shapeType": "rectangle"
+        },
+        "sizeOverLifetime": {
+          "endScaleFactor": 0.25
+        },
+        "colorOverLifetime": {
+          "endTint": 16711680,
+          "endAlphaFactor": 0
+        },
+        "rotationOverLifetime": {
+          "z": 0
+        },
+        "forceOverLifetime": {
+          "x": 0,
+          "y": 0
+        },
+        "textureSheetAnimation": {
+          "fps": 12,
+          "loop": true,
+          "selectionMode": "sequence"
+        }
+      },
+      "renderer": {
+        "textureSet": "flame-frames",
+        "blendMode": "add"
+      },
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "main": {
+        "maxParticles": 64,
+        "startSpeed": {
+          "min": 20,
+          "max": 35
+        },
+        "startScale": {
+          "min": 0.5,
+          "max": 0.9
+        },
+        "startTint": 16755200,
+        "startAlpha": 0.9,
+        "maxBirthsPerUpdate": 64,
+        "startLifetime": 0.8,
+        "startRotation": 0,
+        "randomSeed": 202
+      }
+    },
+    {
+      "id": "sparks",
+      "modules": {
+        "shape": {
+          "spreadRadians": 6.283185307179586,
+          "offsetX": 0,
+          "offsetY": 0,
+          "directionRadians": 0,
+          "shapeType": "point"
+        },
+        "sizeOverLifetime": {
+          "endScaleFactor": 0
+        },
+        "colorOverLifetime": {
+          "endAlphaFactor": 0
+        },
+        "rotationOverLifetime": {
+          "z": 2
+        },
+        "forceOverLifetime": {
+          "y": 160
+        },
+        "textureSheetAnimation": {
+          "selectionMode": "single"
+        },
+        "emission": {
+          "rateOverTime": 0,
+          "duration": 0,
+          "bursts": [
+            {
+              "time": 0,
+              "count": 20
+            }
+          ]
+        }
+      },
+      "renderer": {
+        "textureSet": "spark-texture",
+        "blendMode": "add"
+      },
+      "origin": {
+        "x": 0,
+        "y": 0
+      },
+      "main": {
+        "maxParticles": 32,
+        "maxBirthsPerUpdate": 32,
+        "startSpeed": {
+          "min": 100,
+          "max": 180
+        },
+        "startScale": {
+          "min": 0.1,
+          "max": 0.2
+        },
+        "startTint": 16755268,
+        "startAlpha": 1,
+        "startLifetime": 0.6,
+        "startRotation": {
+          "min": 0,
+          "max": 6.283185307179586
+        },
+        "randomSeed": 303
+      }
+    }
+  ]
+}

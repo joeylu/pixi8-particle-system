@@ -1,4 +1,5 @@
-import { aliasValue, finite, integer, knownKeys, object } from '../core/validation.js';
+import { aliasValue, integer, knownKeys, object } from '../core/validation.js';
+import { rangeSnapshot } from '../composition/config.js';
 export function normalizeParticleGridDimensions(grid) {
     object(grid, 'Particle grid');
     knownKeys(grid, ['numTilesX', 'numTilesY', 'columns', 'rows'], 'Particle grid');
@@ -23,7 +24,7 @@ export function normalizeParticleFrameSelection(selection) {
     const mode = aliasValue(selection, 'selectionMode', 'mode');
     const data = selection;
     const allowed = mode === 'single' ? ['selectionMode', 'mode', 'index']
-        : mode === 'random' ? ['selectionMode', 'mode'] : mode === 'sequence' ? ['selectionMode', 'mode', 'fps', 'loop'] : [];
+        : mode === 'random' ? ['selectionMode', 'mode', 'indices'] : mode === 'sequence' ? ['selectionMode', 'mode', 'fps', 'loop', 'clips', 'randomStartFrame'] : [];
     knownKeys(selection, allowed, 'Texture sheet animation');
     for (const key of allowed)
         if (key in selection && data[key] === undefined)
@@ -34,15 +35,18 @@ export function normalizeParticleFrameSelection(selection) {
         return Object.freeze({ mode, ...('index' in selection ? { index: selection.index } : {}) });
     }
     if (mode === 'random')
-        return Object.freeze({ mode });
+        return Object.freeze({ mode, ...('indices' in data ? { indices: data.indices } : {}) });
     if (mode === 'sequence') {
-        const fps = data.fps;
-        finite(fps, 'fps');
-        if (fps <= 0)
+        const fps = rangeSnapshot(data.fps, 'fps', true);
+        if ((typeof fps === 'number' ? fps : fps.min) <= 0)
             throw new RangeError('fps must be positive');
+        if ('randomStartFrame' in data && typeof data.randomStartFrame !== 'boolean')
+            throw new TypeError('randomStartFrame must be boolean');
+        if (data.randomStartFrame === true && data.loop !== true)
+            throw new RangeError('randomStartFrame requires loop');
         if ('loop' in selection && typeof selection.loop !== 'boolean')
             throw new TypeError('loop must be boolean');
-        return Object.freeze({ mode, fps, ...('loop' in selection ? { loop: selection.loop } : {}) });
+        return Object.freeze({ mode, fps, ...('clips' in data ? { clips: data.clips } : {}), ...('randomStartFrame' in data ? { randomStartFrame: data.randomStartFrame } : {}), ...('loop' in selection ? { loop: selection.loop } : {}) });
     }
     throw new TypeError('selectionMode must be single, random or sequence');
 }

@@ -13,10 +13,10 @@ export function createShapeSpawn(config: ShapeConfig, seed = 1): () => ParticleI
       init(p, ctx) {
         if (!Number.isSafeInteger(birthIndex)) throw new RangeError('birthIndex overflow');
         const index = birthIndex++;
-        let x = 0, y = 0;
+        let x = 0, y = 0, radialAngle = 2 * Math.PI * sampleUnit(seedValue, index, RandomChannel.ShapeY);
         if (shape.type === 'circle') {
-          const radius = shape.radius * Math.sqrt(sampleUnit(seedValue, index, RandomChannel.ShapeX));
-          const angle = 2 * Math.PI * sampleUnit(seedValue, index, RandomChannel.ShapeY);
+          const radius = Math.sqrt(shape.innerRadius ** 2 + (shape.radius ** 2 - shape.innerRadius ** 2) * sampleUnit(seedValue, index, RandomChannel.ShapeX));
+          const angle = radialAngle;
           x = radius * Math.cos(angle); y = radius * Math.sin(angle);
         } else if (shape.type === 'rectangle') {
           x = shape.width * (sampleUnit(seedValue, index, RandomChannel.ShapeX) - 0.5);
@@ -30,7 +30,7 @@ export function createShapeSpawn(config: ShapeConfig, seed = 1): () => ParticleI
           p.y = matrix.b * localX + matrix.d * localY + matrix.ty;
         }
         p.data.birthIndex = index;
-        p.data.directionRadians = shape.directionRadians + shape.spreadRadians * (sampleUnit(seedValue, index, RandomChannel.Direction) - 0.5);
+        p.data.directionRadians = (shape.directionMode === 'fixed' ? shape.directionRadians : radialAngle + (shape.directionMode === 'inward' ? Math.PI : 0)) + shape.spreadRadians * (sampleUnit(seedValue, index, RandomChannel.Direction) - 0.5);
         return undefined;
       },
       reset() { birthIndex = 0; return undefined; },

@@ -4,9 +4,13 @@ export function createKinematicMotion(config = {}) {
     if (arguments.length > 0 && arguments[0] === undefined)
         throw new TypeError('KinematicMotion config cannot be explicitly undefined');
     object(config, 'KinematicMotion config');
-    knownKeys(config, ['force'], 'KinematicMotion');
+    knownKeys(config, ['force', 'drag'], 'KinematicMotion');
     if ('force' in config)
         syncFunction(config.force, 'force factory');
+    const drag = config.drag ?? 0;
+    finite(drag, 'drag');
+    if (drag < 0)
+        throw new RangeError('drag must be nonnegative');
     const forceFactory = config.force;
     return () => {
         let force = { accelerationX: 0, accelerationY: 0 };
@@ -45,6 +49,17 @@ export function createKinematicMotion(config = {}) {
                     ay += gy;
                     finite(ax, 'force + gravity.x');
                     finite(ay, 'force + gravity.y');
+                }
+                if (drag > 0) {
+                    const q = drag * dt;
+                    const decay = Math.exp(-q);
+                    const h = -Math.expm1(-q) / drag;
+                    const j = Math.abs(q) < 1e-4 ? dt * dt * (.5 - q / 6 + q * q / 24 - q * q * q / 120) : (dt - h) / drag;
+                    p.x += p.vx * h + ax * j;
+                    p.y += p.vy * h + ay * j;
+                    p.vx = p.vx * decay + ax * h;
+                    p.vy = p.vy * decay + ay * h;
+                    return undefined;
                 }
                 const deltaVX = ax * dt, deltaVY = ay * dt;
                 const motionX = p.vx * dt, motionY = p.vy * dt;

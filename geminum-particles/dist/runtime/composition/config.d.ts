@@ -13,6 +13,8 @@ export type ShapeSnapshot = Readonly<{
     directionRadians: number;
     spreadRadians: number;
     radius: number;
+    innerRadius: number;
+    directionMode: 'fixed' | 'outward' | 'inward';
     width: number;
     height: number;
 }>;

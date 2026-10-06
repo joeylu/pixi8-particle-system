@@ -35,7 +35,9 @@ export declare class PixiParticleEntity {
     play(): void;
     pause(): void;
     resume(): void;
-    stop(): void;
+    stop(options?: {
+        killLayerIds?: readonly string[];
+    }): void;
     reset(): void;
     setOrigin(x: number, y: number): void;
     update(seconds: number): void;

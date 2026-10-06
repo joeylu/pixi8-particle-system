@@ -1,6 +1,6 @@
 # Simulation Space and Gravity
 
-Main simulationSpace is local/world, defaulting to local. gravityModifier is a finite signed constant, defaulting to 0; 0 disables gravity and negative values reverse it. Both main/core inputs support these fields; field definitions belong only to the [JSON Contract](effect.schema.json). The gravity baseline is not in JSON: the host injects a vector in game-world pixels/second². There is no default 9.81, gravitySource, custom space, or scalingMode parameter. Recreate the instance to change modes.
+Main simulationSpace is local/world, defaulting to local. gravityModifier is a finite signed constant, defaulting to 0; 0 disables gravity and negative values reverse it. main supplies these fields; field definitions belong only to the [JSON Contract](../../skill-geminum-particle/references/effect.schema.json). The gravity baseline is not in JSON: the host injects a vector in game-world pixels/second². There is no default 9.81, gravitySource, custom space, or scalingMode parameter. Recreate the instance to change modes.
 
 ## Pure Core Environment
 
@@ -26,6 +26,6 @@ Space binding preserves the complete affine matrix, supporting negative scale, r
 
 Particle rendering inherits alpha and tint multiplication from Pixi ancestor render groups. The host may fade or tint an entire effect through parent containers. Particle alpha/tint still come from simulation and appearance modules; the SDK does not write parent colors back into these values or multiply them again. Parent alpha/tint affect drawing only, not lifetime, emission, or motion.
 
-The [dual-space droplet recipe](../assets/space-gravity.effect.json) has two layers: world gravity and a local negative modifier, each with explicit bounds and a shared single-frame source. The resolver supplies a droplet Texture; the runtime call supplies space and required gravity, for example {x:0,y:400}. That vector is the caller's chosen world gravity baseline, not an SDK default. JSON validation needs no environment binding; creation checks all runtime prerequisites.
+The [dual-space runtime fixture](../../skill-geminum-particle/assets/space-gravity.effect.json) has two layers: world gravity and a local negative modifier, each with explicit bounds and a shared single-frame source. The resolver supplies a droplet Texture; the runtime call supplies space and required gravity, for example {x:0,y:400}. That vector is the caller's chosen world gravity baseline, not an SDK default. JSON validation needs no environment binding; creation checks all runtime prerequisites.
 
 Trails worldSpace=true requires runtime space even with local Main, transforms sampled points into world, and retains them there. false follows the Main basis. The SDK separately manages body and trail output poses; see [Trails](trails.md).

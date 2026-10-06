@@ -13,14 +13,16 @@ const MODULES = [
   {
     key: 'main', title: 'Main', meta: 'PARTICLE SYSTEM', required: true, open: true,
     fields: [
-      number('main.startLifetime', 'Start lifetime', 0.1, 12, 0.1, 's'),
+      pair('main.startLifetime', 'Start lifetime', 0.01, 30, 0.01, 's'),
       pair('main.startSpeed', 'Start speed', 0, 800, 1, 'px/s'),
       pair('main.startScale', 'Start scale', 0, 3, 0.01, '×'),
+      number('main.startScaleAspect.x', 'Scale aspect X', 0.01, 8, 0.01, '×'),
+      number('main.startScaleAspect.y', 'Scale aspect Y', 0.01, 8, 0.01, '×'),
       pair('main.startRotation', 'Start rotation', -360, 360, 1, '°'),
       color('main.startTint', 'Start color'),
-      number('main.startAlpha', 'Start opacity', 0, 1, 0.01),
+      pair('main.startAlpha', 'Start opacity', 0, 1, 0.01),
       select('main.simulationSpace', 'Simulation space', [['local', 'Local'], ['world', 'World']]),
-      number('main.gravityModifier', 'Gravity modifier', -3, 3, 0.05, '×', 'World gravity: 300 px/s² downward.'),
+      number('main.gravityModifier', 'Gravity modifier', -3, 3, 0.05, '×', 'Multiplies the host gravity in Scene.'),
       number('main.maxParticles', 'Max particles', 1, 3000, 1),
       { ...number('main.randomSeed', 'Random seed', 0, 4294967295), type: 'number' },
       { ...number('main.maxBirthsPerUpdate', 'Birth budget / step', 1, 10000), type: 'number', help: 'Limits births in one simulation update.' },
@@ -28,17 +30,25 @@ const MODULES = [
   },
   {
     key: 'emission', title: 'Emission', meta: 'SPAWN', open: true,
-    fields: [number('emission.rateOverTime', 'Rate over time', 0, 500, 1, '/s'), number('emission.burstCount', 'Manual burst', 1, 1000, 1)],
-    note: 'Manual burst uses the Emit burst button. Disabling Emission stops automatic births.',
+    fields: [number('emission.rateOverTime', 'Rate over time', 0, 500, 1, '/s'),
+      number('emission.startDelay', 'Start delay', 0, 10, 0.01, 's'),
+      checkbox('emission.finite', 'Finite duration'),
+      { ...number('emission.duration', 'Duration', 0, 20, 0.01, 's'), when: (state) => state.emission.finite },
+      { ...checkbox('emission.loop', 'Loop emission'), when: (state) => state.emission.finite },
+      { path: 'emission.bursts', label: 'Timed bursts', type: 'bursts' },
+      number('emission.burstCount', 'Manual burst', 1, 1000, 1)],
+    note: 'Timed bursts use seconds within each emission window. Manual bursts create a separate effect at the current emitter position.',
   },
   {
     key: 'shape', title: 'Shape', meta: 'SPAWN REGION',
     fields: [
       select('shape.shapeType', 'Shape type', [['point', 'Point'], ['circle', 'Circle'], ['rectangle', 'Rectangle']]),
       { ...number('shape.radius', 'Radius', 0, 200, 1, 'px'), when: (state) => state.shape.shapeType === 'circle' },
+      { ...number('shape.innerRadius', 'Inner radius', 0, 200, 1, 'px'), when: (state) => state.shape.shapeType === 'circle' },
       { ...number('shape.width', 'Width', 0, 400, 1, 'px'), when: (state) => state.shape.shapeType === 'rectangle' },
       { ...number('shape.height', 'Height', 0, 400, 1, 'px'), when: (state) => state.shape.shapeType === 'rectangle' },
-      number('shape.directionDegrees', 'Direction', -180, 180, 1, '°'),
+      { ...select('shape.directionMode', 'Direction mode', [['fixed', 'Fixed'], ['outward', 'Outward'], ['inward', 'Inward']]), when: (state) => state.shape.shapeType !== 'rectangle' },
+      { ...number('shape.directionDegrees', 'Direction', -180, 180, 1, '°'), when: (state) => state.shape.directionMode === 'fixed' || state.shape.shapeType === 'rectangle' },
       number('shape.spreadDegrees', 'Spread', 0, 360, 1, '°'),
       number('shape.offsetX', 'Offset X', -300, 300, 1, 'px'),
       number('shape.offsetY', 'Offset Y', -300, 300, 1, 'px'),
@@ -50,12 +60,24 @@ const MODULES = [
     fields: [number('force.x', 'Force X', -600, 600, 1, 'px/s²'), number('force.y', 'Force Y', -600, 600, 1, 'px/s²')],
   },
   {
-    key: 'color', title: 'Color over Lifetime', meta: 'APPEARANCE',
-    fields: [color('color.endTint', 'End color'), number('color.endAlphaFactor', 'End opacity factor', 0, 1, 0.01, '×')],
-    note: 'Linear transition from each particle’s starting color and opacity.',
+    key: 'drag', title: 'Limit Velocity over Lifetime', meta: 'DRAG',
+    fields: [number('drag.drag', 'Drag coefficient', 0, 12, 0.05, '1/s')],
+    note: 'Analytic drag acts together with force and gravity.',
   },
-  { key: 'size', title: 'Size over Lifetime', meta: 'APPEARANCE', fields: [number('size.endScaleFactor', 'End scale factor', 0, 8, 0.05, '×')] },
-  { key: 'rotation', title: 'Rotation over Lifetime', meta: 'APPEARANCE', fields: [number('rotation.degreesPerSecond', 'Angular speed', -720, 720, 1, '°/s')] },
+  {
+    key: 'color', title: 'Color over Lifetime', meta: 'APPEARANCE',
+    fields: [checkbox('color.useColorCurve', 'Use color curve'),
+      { ...color('color.endTint', 'End color'), when: (state) => !state.color.useColorCurve },
+      { path: 'color.colorCurve', label: 'Color curve', type: 'curve', color: true, when: (state) => state.color.useColorCurve },
+      checkbox('color.useAlphaCurve', 'Use opacity curve'),
+      { ...number('color.endAlphaFactor', 'End opacity factor', 0, 1, 0.01, '×'), when: (state) => !state.color.useAlphaCurve },
+      { path: 'color.alphaCurve', label: 'Opacity curve', type: 'curve', min: 0, max: 1, step: 0.01, when: (state) => state.color.useAlphaCurve }],
+    note: 'Curve time is normalized age (0–1). Values multiply the starting color or opacity.',
+  },
+  { key: 'size', title: 'Size over Lifetime', meta: 'APPEARANCE', fields: [checkbox('size.useScaleCurve', 'Use scale curve'),
+    { ...number('size.endScaleFactor', 'End scale factor', 0, 8, 0.05, '×'), when: (state) => !state.size.useScaleCurve },
+    { path: 'size.scaleCurve', label: 'Scale curve', type: 'curve', min: 0, max: 8, step: 0.01, when: (state) => state.size.useScaleCurve }] },
+  { key: 'rotation', title: 'Rotation over Lifetime', meta: 'APPEARANCE', fields: [pair('rotation.degreesPerSecond', 'Angular speed', -720, 720, 1, '°/s')] },
   {
     key: 'trails', title: 'Trails', meta: 'PATH',
     fields: [
@@ -76,8 +98,16 @@ const MODULES = [
   },
   {
     key: 'renderer', title: 'Renderer', meta: 'MATERIAL', required: true,
-    fields: [select('renderer.blendMode', 'Blending', [['normal', 'Normal'], ['add', 'Additive']])],
-    note: 'Single-frame textures. One ParticleContainer renders the selected material.',
+    fields: [select('renderer.blendMode', 'Blending', [['normal', 'Normal'], ['add', 'Additive']]),
+      select('renderer.alignment', 'Alignment', [['fixed', 'Fixed'], ['velocity', 'Velocity']]),
+      number('renderer.forwardDegrees', 'Texture forward axis', -180, 180, 1, '°')],
+    note: 'Supplied PNGs are single-frame materials. Velocity alignment uses particle velocity; a zero-speed local head follows its host orientation.',
+  },
+  {
+    key: 'scene', title: 'Scene', meta: 'HOST', required: true,
+    fields: [number('scene.gravityX', 'Gravity X', -1000, 1000, 1, 'px/s²'),
+      number('scene.gravityY', 'Gravity Y', -1000, 1000, 1, 'px/s²'), color('scene.background', 'Background')],
+    note: 'Scene settings belong to this workspace and are kept outside exported effect JSON.',
   },
 ];
 
@@ -93,7 +123,16 @@ function renderField(field, state) {
   const unit = field.unit ? `<small class="field-unit">${escape(field.unit)}</small>` : '';
   const attr = `data-path="${field.path}" min="${field.min}" max="${field.max}" step="${field.step}"`;
   let control;
-  if (field.type === 'range') {
+  if (field.type === 'curve' || field.type === 'bursts') {
+    const curve = field.type === 'curve';
+    const rows = value.map((point, index) => {
+      const endpoint = curve && (index === 0 || index === value.length - 1);
+      const key = curve ? 't' : 'time';
+      const valueKey = curve ? 'value' : 'count';
+      return `<div class="${curve ? 'curve-row' : 'burst-row'}"><label><small>${curve ? 'age' : 's'}</small><input type="number" data-path="${field.path}.${index}.${key}" value="${point[key]}" min="0" ${curve ? 'max="1"' : ''} step="0.01" aria-label="${escape(field.label)} ${index + 1} time" ${endpoint ? 'disabled' : ''}></label><label><small>${field.color ? 'RGB' : curve ? '×' : 'count'}</small><input type="${field.color ? 'color' : 'number'}" data-path="${field.path}.${index}.${valueKey}" value="${escape(point[valueKey])}" ${field.color ? '' : `min="${curve ? field.min : 1}" ${curve ? `max="${field.max}"` : ''} step="${curve ? field.step : 1}"`} aria-label="${escape(field.label)} ${index + 1} value"></label><button type="button" class="list-remove" data-remove="${field.path}" data-index="${index}" aria-label="Remove ${escape(field.label)} point ${index + 1}" ${endpoint ? 'disabled' : ''}>×</button></div>`;
+    }).join('');
+    control = `<div class="${curve ? 'curve-editor' : 'burst-editor'}">${rows}<button type="button" class="curve-add" data-add="${field.path}" data-kind="${field.type}" ${curve && value.length >= 8 ? 'disabled' : ''}>+ ${curve ? 'Age point' : 'Timed burst'}</button></div>`;
+  } else if (field.type === 'range') {
     control = `<div class="range-control"><input id="${id}" type="range" ${attr} value="${value}" aria-label="${escape(field.label)}"><input type="number" ${attr} value="${value}" aria-label="${escape(field.label)} value"></div>`;
   } else if (field.type === 'pair') {
     control = `<div class="range-pair">${['min', 'max'].map((end) => `<label><small>${end}</small><input id="${id}-${end}" type="number" data-path="${field.path}.${end}" min="${field.min}" max="${field.max}" step="${field.step}" value="${value[end]}" aria-label="${escape(field.label)} ${end}"></label>`).join('')}</div>`;
@@ -166,9 +205,9 @@ export function createInspector(host, { onChange, onInvalid }) {
     host.querySelectorAll('[data-path]').forEach((sibling) => {
       if (sibling !== target && sibling.dataset.path === path) sibling.value = String(value);
     });
-    if (target.type === 'color') target.nextElementSibling.textContent = value.toUpperCase();
+    if (target.type === 'color' && target.nextElementSibling?.classList.contains('color-value')) target.nextElementSibling.textContent = value.toUpperCase();
     onChange(path, value);
-    if (path.startsWith('enabled.') || path === 'shape.shapeType') render(state);
+    if (path.startsWith('enabled.') || ['shape.shapeType', 'shape.directionMode', 'emission.finite', 'color.useColorCurve', 'color.useAlphaCurve', 'size.useScaleCurve'].includes(path)) render(state);
   }
 
   function click(event) {
@@ -176,6 +215,27 @@ export function createInspector(host, { onChange, onInvalid }) {
     const texture = event.target.closest('[data-texture]');
     if (texture) {
       onChange('renderer.texture', texture.dataset.texture);
+      render(state);
+    }
+    const add = event.target.closest('[data-add]');
+    const remove = event.target.closest('[data-remove]');
+    if (add) {
+      const path = add.dataset.add;
+      const list = structuredClone(get(state, path));
+      if (add.dataset.kind === 'curve') {
+        if (list.length >= 8) return;
+        let gap = 0;
+        for (let index = 1; index < list.length - 1; index++) if (list[index + 1].t - list[index].t > list[gap + 1].t - list[gap].t) gap = index;
+        const previous = list[gap], next = list[gap + 1];
+        list.splice(gap + 1, 0, { t: (previous.t + next.t) / 2, value: typeof previous.value === 'number' ? (previous.value + next.value) / 2 : previous.value });
+      } else list.push({ time: list.length ? list.at(-1).time + 0.1 : 0, count: 1 });
+      onChange(path, list);
+      render(state);
+    } else if (remove) {
+      const path = remove.dataset.remove;
+      const list = structuredClone(get(state, path));
+      list.splice(Number(remove.dataset.index), 1);
+      onChange(path, list);
       render(state);
     }
   }

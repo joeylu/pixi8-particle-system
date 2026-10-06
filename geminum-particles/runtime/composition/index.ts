@@ -1,5 +1,5 @@
 export type {
-  ScalarRange, StartValuesConfig, ParticleEffectMainConfig, ShapeConfig, ShapeCommonConfig,
+  ParticleCurve, ScalarRange, StartValuesConfig, ParticleEffectMainConfig, ShapeConfig, ShapeCommonConfig,
   ForceConfig, ForceOverLifetimeConfig, EmissionModuleConfig, ConstantForce, ConstantForceFactory, ColorOverLifetimeConfig, SizeOverLifetimeConfig,
   RotationOverLifetimeConfig, ParticleEffectConfig, ParticleEffectEnvironment, ParticleModuleData, CreateParticleEffectOptions,
 } from './contracts.js';

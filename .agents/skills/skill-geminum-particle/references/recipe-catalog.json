@@ -1,0 +1,76 @@
+{
+  "recipes": [
+    {
+      "id": "explosion",
+      "title": "爆炸与爆破命中",
+      "file": "recipes/explosion.md",
+      "when": "突发膨胀、冲击、火团或碎屑向外展开后余留。大爆炸优先本类；持续火源另选fire。"
+    },
+    {
+      "id": "fire",
+      "title": "持续燃烧与火舌",
+      "file": "recipes/fire.md",
+      "when": "稳定火源、喷火、篝火、持续上升的火焰；不是见到暖色或火星就选择。"
+    },
+    {
+      "id": "smoke",
+      "title": "烟尘与薄雾",
+      "file": "recipes/smoke.md",
+      "when": "烟柱、云雾、尘团、介质扩散和遮挡是主体；爆炸里的少量余烟可由explosion覆盖。"
+    },
+    {
+      "id": "liquids",
+      "title": "水流与液体喷溅",
+      "file": "recipes/liquids.md",
+      "when": "连续液流、液滴、喷泉、飞溅、气泡或涟漪；必须以液体读数为目标。"
+    },
+    {
+      "id": "weather",
+      "title": "雨雪与天气",
+      "file": "recipes/weather.md",
+      "when": "覆盖区域内持续降雨、降雪、风雪，关注分布、层次、漂移；单次冰霜命中不属于天气。"
+    },
+    {
+      "id": "falling",
+      "title": "落叶与飘落碎屑",
+      "file": "recipes/falling.md",
+      "when": "可辨认的叶片、纸屑、碎片在侧视画面飘落或飞散，需要个体姿态；爆炸主体优先explosion。"
+    },
+    {
+      "id": "sparks",
+      "title": "火花与余烬",
+      "file": "recipes/sparks.md",
+      "when": "高速细线火星、局部飞散亮粒或上升余烬承担主体；不要因任意效果含光点就追加。"
+    },
+    {
+      "id": "electricity",
+      "title": "局部电弧与放电",
+      "file": "recipes/electricity.md",
+      "when": "固定区域内的曲折电弧、绕物断续放电和余亮屑；依赖真实电弧轮廓或动画。"
+    },
+    {
+      "id": "light",
+      "title": "光晕与星芒",
+      "file": "recipes/light.md",
+      "when": "持续柔光、局部星芒、镜头辉光是主体；独立发射瞬闪优先flash，不承诺真实照明或bloom。"
+    },
+    {
+      "id": "energy",
+      "title": "能量环与传送门",
+      "file": "recipes/energy.md",
+      "when": "环形边界、中心空洞、内聚或外逸的能量门/光环/蓄力场；旋转图片不等于粒子绕中心运动。"
+    },
+    {
+      "id": "flash",
+      "title": "发射闪光",
+      "file": "recipes/flash.md",
+      "when": "宿主在发射口或释放点触发的一次静止短闪；与飞行弹体分开生成，强调短核闪和方向性碎亮。"
+    },
+    {
+      "id": "impact",
+      "title": "命中爆散",
+      "file": "recipes/impact.md",
+      "when": "宿主在接触位置触发的一次局部命中；短闪、冲击环、法线偏向碎屑和余烟，位置法线由宿主提供。"
+    }
+  ]
+}

@@ -4,6 +4,8 @@ import type { ParticleModuleData } from '../composition/contracts.js';
 import { type ParticleFrameSelection } from '../entity/index.js';
 export type PixiFrameParticleRendererOptions = {
     textures: readonly Texture[];
+    alignment?: 'fixed' | 'velocity';
+    forwardAngle?: number;
     updateWrites: readonly ParticleField[];
     blendMode?: 'normal' | 'add';
     boundsArea?: Rectangle;
@@ -26,6 +28,8 @@ export declare class PixiFrameParticleRenderer<T extends ParticleModuleData = Pa
     private readonly entries;
     private readonly select;
     private readonly sequence;
+    private readonly alignment;
+    private readonly forwardAngle;
     private version;
     private disposing;
     private cleanupFailure;

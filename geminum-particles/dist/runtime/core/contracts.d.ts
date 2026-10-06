@@ -82,6 +82,7 @@ export interface ParticleEmission {
     readonly id: string;
     plan: (ctx: EmissionContext) => readonly BirthRequest[];
     reset: () => undefined;
+    hasFutureEvents?: (timeSeconds: number) => boolean;
 }
 export interface ParticleRenderSnapshot<T extends object = Record<string, never>> {
     readonly particles: readonly ParticleState<T>[];
@@ -116,6 +117,7 @@ export interface ParticleSystemOptions<T extends object = Record<string, never>>
     main: MainConfig;
     spawn: () => ParticleInitializer<T>;
     emission?: () => ParticleEmission;
+    sampleLifetime?: (birthIndex: number) => number;
     behaviors?: readonly (() => ParticleBehavior<T>)[];
     data?: {
         create: () => T & {

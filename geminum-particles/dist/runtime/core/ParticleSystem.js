@@ -62,8 +62,11 @@ export class ParticleSystem {
         this.resets = [];
         this.dataOwners = new WeakMap();
         object(options, 'ParticleSystem options');
-        knownKeys(options, ['main', 'spawn', 'emission', 'behaviors', 'data', 'renderer', 'environment', 'observers'], 'ParticleSystem options');
+        knownKeys(options, ['main', 'spawn', 'emission', 'sampleLifetime', 'behaviors', 'data', 'renderer', 'environment', 'observers'], 'ParticleSystem options');
         this.main = mainSnapshot(options.main);
+        if ('sampleLifetime' in options)
+            syncFunction(options.sampleLifetime, 'sampleLifetime');
+        this.sampleLifetime = options.sampleLifetime;
         if ('environment' in options) {
             syncFunction(options.environment, 'environment factory');
             const created = options.environment();
@@ -123,7 +126,9 @@ export class ParticleSystem {
             identify(emission);
             syncFunction(emission.plan, 'emission.plan');
             syncFunction(emission.reset, 'emission.reset');
-            this.emission = { id: emission.id, plan: emission.plan.bind(emission), reset: emission.reset.bind(emission) };
+            if (emission.hasFutureEvents)
+                syncFunction(emission.hasFutureEvents, 'emission.hasFutureEvents');
+            this.emission = { id: emission.id, plan: emission.plan.bind(emission), reset: emission.reset.bind(emission), ...(emission.hasFutureEvents ? { hasFutureEvents: emission.hasFutureEvents.bind(emission) } : {}) };
             this.resets.push({ id: emission.id, call: this.emission.reset });
         }
         const motion = [], appearance = [];
@@ -215,7 +220,7 @@ export class ParticleSystem {
         }
     }
     pending() {
-        let pending = this.active.length > 0;
+        let pending = this.active.length > 0 || (this.mode === 'playing' && (this.emission?.hasFutureEvents?.(this.time) ?? !!this.emission));
         for (const observer of this.observers) {
             this.moduleId = observer.id;
             const result = observer.hasPendingWork();
@@ -265,6 +270,7 @@ export class ParticleSystem {
         }
     }
     resetRun() {
+        this.nextBirthId = 0;
         this.time = 0;
         this.timeCompensation = 0;
         for (const reset of this.resets) {
@@ -291,7 +297,21 @@ export class ParticleSystem {
     }
     play() {
         this.guard(['stopped']);
-        this.run('play', () => { this.resetRun(); this.mode = 'playing'; });
+        this.run('play', () => {
+            this.resetRun();
+            this.nextBirthId = 0;
+            this.mode = 'playing';
+            this.sampleEnvironment();
+            if (this.emission) {
+                const requests = this.emission.plan(Object.freeze({ startTimeSeconds: 0, endTimeSeconds: 0, dtSeconds: 0, maxBirths: this.main.maxBirthsPerUpdate }));
+                this.checkPlan(requests, 0);
+                for (const request of requests)
+                    this.birth(request.count, 0, this.originX, this.originY);
+                if (this.emission.hasFutureEvents && !this.emission.hasFutureEvents(0))
+                    this.mode = this.active.length ? 'draining' : 'stopped';
+            }
+            this.sync();
+        });
     }
     pause() {
         this.guard(['playing', 'draining']);
@@ -302,15 +322,42 @@ export class ParticleSystem {
         this.guard(['paused']);
         this.mode = this.previousMode;
     }
-    stop() {
+    stop(options) {
         this.guard(['stopped', 'playing', 'draining', 'paused']);
+        if (options !== undefined) {
+            object(options, 'Stop options');
+            knownKeys(options, ['killParticles'], 'Stop');
+            if ('killParticles' in options && typeof options.killParticles !== 'boolean')
+                throw new TypeError('killParticles must be boolean');
+        }
         this.run('stop', () => {
+            if (this.mode === 'playing')
+                this.mode = 'draining';
+            if (this.mode === 'paused')
+                this.previousMode = 'draining';
+            if (options?.killParticles) {
+                this.sampleEnvironment();
+                const ctx = Object.freeze({ timeSeconds: this.time, ...this.environmentContext() });
+                for (const slot of this.active) {
+                    for (const observer of this.observers) {
+                        this.moduleId = observer.id;
+                        if (observer.onDeath)
+                            undefinedResult(observer.onDeath(this.observation(slot), ctx));
+                    }
+                    this.moduleId = undefined;
+                    this.free.push(slot);
+                    this.membershipVersion++;
+                }
+                this.active.length = 0;
+            }
             if (!this.pending())
                 this.mode = 'stopped';
             else if (this.mode === 'paused')
                 this.previousMode = 'draining';
             else
                 this.mode = 'draining';
+            if (options?.killParticles)
+                this.sync();
         });
     }
     setOrigin(x, y) {
@@ -383,9 +430,10 @@ export class ParticleSystem {
             let cursor = start;
             for (const request of requests) {
                 const at = request.offsetSeconds === actualDt ? end : start + request.offsetSeconds;
-                if (!(at > cursor))
-                    throw new RangeError('Birth time cannot make positive progress');
-                this.advance(cursor, at);
+                if (at < cursor)
+                    throw new RangeError('Birth time moved backwards');
+                if (at > cursor)
+                    this.advance(cursor, at);
                 this.birth(request.count, at, originX, originY);
                 cursor = at;
             }
@@ -393,6 +441,8 @@ export class ParticleSystem {
                 this.advance(cursor, end);
             this.time = end;
             this.timeCompensation = compensation;
+            if (this.mode === 'playing' && this.emission?.hasFutureEvents && !this.emission.hasFutureEvents(end))
+                this.mode = 'draining';
             if (this.mode === 'draining' && !this.pending())
                 this.mode = 'stopped';
             this.sync();
@@ -401,7 +451,7 @@ export class ParticleSystem {
     checkPlan(requests, dt) {
         if (!Array.isArray(requests))
             throw new TypeError('Emission plan must be a synchronous array');
-        let total = 0, previous = 0;
+        let total = 0, previous = -1;
         if (requests.length > this.main.maxBirthsPerUpdate)
             throw new RangeError('Birth budget exceeded');
         for (const request of requests) {
@@ -409,8 +459,8 @@ export class ParticleSystem {
             knownKeys(request, ['offsetSeconds', 'count'], 'birth request');
             finite(request.offsetSeconds, 'offsetSeconds');
             integer(request.count, 'birth count', 1);
-            if (!(request.offsetSeconds > previous) || request.offsetSeconds > dt)
-                throw new RangeError('Birth offsets must strictly increase in (0, dtSeconds]');
+            if (request.offsetSeconds < 0 || !(request.offsetSeconds > previous) || request.offsetSeconds > dt)
+                throw new RangeError('Birth offsets must strictly increase in [0, dtSeconds]');
             total += request.count;
             integer(total, 'total birth count', 0);
             if (total > this.main.maxBirthsPerUpdate)
@@ -434,14 +484,17 @@ export class ParticleSystem {
                 object(data, 'particle data');
                 const record = { age: 0, birthTime: time };
                 record.particle = {
-                    get ageSeconds() { return record.age; }, get lifetimeSeconds() { return lifetime; },
+                    get ageSeconds() { return record.age; }, get lifetimeSeconds() { return record.lifetime; },
                     x: 0, y: 0, vx: 0, vy: 0, rotation: 0, scaleX: 1, scaleY: 1, alpha: 1, tint: 0xffffff, data,
                 };
-                const lifetime = this.main.lifetimeSeconds;
                 slot = record;
                 this.allocated++;
             }
             const p = slot.particle;
+            slot.lifetime = this.sampleLifetime ? this.sampleLifetime(birthId) : this.main.lifetimeSeconds;
+            finite(slot.lifetime, 'particle lifetime');
+            if (slot.lifetime <= 0)
+                throw new RangeError('particle lifetime must be positive');
             slot.birthId = birthId;
             slot.age = 0;
             slot.birthTime = time;
@@ -463,6 +516,10 @@ export class ParticleSystem {
                 this.moduleId = hook.id;
                 undefinedResult(hook.call(p, ctx));
                 checkFields(p, hook.fields, hook.id);
+            }
+            for (const hook of this.updates.filter(h => !['x', 'y', 'vx', 'vy'].some(f => h.fields.includes(f)))) {
+                this.moduleId = hook.id;
+                undefinedResult(hook.call(p, Object.freeze({ startTimeSeconds: time, endTimeSeconds: time, dtSeconds: 0, ageSeconds: 0, normalizedAge: 0, ...this.environmentContext() })));
             }
             this.moduleId = undefined;
             checkFields(p, PARTICLE_FIELDS);
@@ -497,21 +554,21 @@ export class ParticleSystem {
         let write = 0;
         for (const slot of this.active) {
             const p = slot.particle;
-            const remaining = this.main.lifetimeSeconds - slot.age;
+            const remaining = slot.lifetime - slot.age;
             // Age and absolute lifetime endpoints share a relative rounding boundary.
             // The absolute endpoint also bounds error when clock spacing exceeds age spacing.
-            const dies = span >= remaining || sameTime(slot.age + span, this.main.lifetimeSeconds)
-                || sameTime(end, slot.birthTime + this.main.lifetimeSeconds);
+            const dies = span >= remaining || sameTime(slot.age + span, slot.lifetime)
+                || sameTime(end, slot.birthTime + slot.lifetime);
             const actual = dies ? Math.min(span, remaining) : span;
             if (actual > 0) {
-                const nextAge = dies ? this.main.lifetimeSeconds : slot.age + actual;
+                const nextAge = dies ? slot.lifetime : slot.age + actual;
                 if (!(nextAge > slot.age))
                     throw new RangeError('Particle age cannot make positive progress');
                 slot.age = nextAge;
                 const actualEnd = dies ? start + actual : end;
                 const ctx = Object.freeze({
                     startTimeSeconds: start, endTimeSeconds: actualEnd, dtSeconds: actualEnd - start,
-                    ageSeconds: slot.age, normalizedAge: slot.age / this.main.lifetimeSeconds,
+                    ageSeconds: slot.age, normalizedAge: slot.age / slot.lifetime,
                     ...this.environmentContext(),
                 });
                 if (!(ctx.dtSeconds > 0))

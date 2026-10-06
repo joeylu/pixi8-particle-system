@@ -41,28 +41,42 @@ export function rangeSnapshot(value: unknown, label: string, nonnegativeOnly: bo
 export function startSnapshot(config: StartValuesConfig): Required<Omit<StartValuesConfig, 'startRotation'>> {
   object(config, 'StartValues config');
   const rotation = aliasValue(config, 'startRotation', 'startRotationRadians', 0);
-  knownKeys(config, ['startSpeed', 'startScale', 'startRotation', 'startRotationRadians', 'startTint', 'startAlpha'], 'StartValues');
+  knownKeys(config, ['startSpeed', 'startScale', 'startRotation', 'startRotationRadians', 'startTint', 'startAlpha', 'startScaleAspect'], 'StartValues');
+  const aspect = config.startScaleAspect ?? { x: 1, y: 1 };
+  object(aspect, 'startScaleAspect'); knownKeys(aspect, ['x', 'y'], 'startScaleAspect');
+  finite(aspect.x, 'startScaleAspect.x'); finite(aspect.y, 'startScaleAspect.y');
+  if (aspect.x <= 0 || aspect.y <= 0) throw new RangeError('startScaleAspect must be positive');
+  const alpha = rangeSnapshot(config.startAlpha ?? 1, 'startAlpha', true);
+  unit(typeof alpha === 'number' ? alpha : alpha.max, 'startAlpha');
   return Object.freeze({
+    startScaleAspect: Object.freeze({ x: aspect.x, y: aspect.y }),
     startSpeed: rangeSnapshot('startSpeed' in config ? config.startSpeed : 0, 'startSpeed', true),
     startScale: rangeSnapshot('startScale' in config ? config.startScale : 1, 'startScale', true),
     startRotationRadians: rangeSnapshot(rotation, 'startRotation/startRotationRadians', false),
     startTint: tint(optionalNumber(config, 'startTint', 0xffffff), 'startTint'),
-    startAlpha: unit(optionalNumber(config, 'startAlpha', 1), 'startAlpha'),
+    startAlpha: alpha,
   });
 }
 export type ShapeSnapshot = Readonly<{
   type: 'point' | 'circle' | 'rectangle'; offsetX: number; offsetY: number;
-  directionRadians: number; spreadRadians: number; radius: number; width: number; height: number;
+  directionRadians: number; spreadRadians: number; radius: number; innerRadius: number; directionMode: 'fixed' | 'outward' | 'inward'; width: number; height: number;
 }>;
 export function shapeSnapshot(config: ShapeConfig): ShapeSnapshot {
   object(config, 'Shape config');
   const type = aliasValue(config, 'shapeType', 'type');
   if (type !== 'point' && type !== 'circle' && type !== 'rectangle') throw new TypeError('Invalid shape type');
-  const specific = type === 'circle' ? ['radius'] : type === 'rectangle' ? ['width', 'height'] : [];
-  knownKeys(config, ['shapeType', 'type', 'offsetX', 'offsetY', 'directionRadians', 'spreadRadians', ...specific], 'Shape');
+  const specific = type === 'circle' ? ['radius', 'innerRadius'] : type === 'rectangle' ? ['width', 'height'] : [];
+  knownKeys(config, ['shapeType', 'type', 'offsetX', 'offsetY', 'directionRadians', 'spreadRadians', 'directionMode', ...specific], 'Shape');
   const spreadRadians = optionalNumber(config, 'spreadRadians', 0);
   if (spreadRadians < 0 || spreadRadians > 2 * Math.PI) throw new RangeError('spreadRadians must be in [0, 2π]');
+  const directionMode = config.directionMode ?? 'fixed';
+  if (directionMode !== 'fixed' && directionMode !== 'outward' && directionMode !== 'inward') throw new TypeError('Invalid directionMode');
+  if (type === 'rectangle' && directionMode !== 'fixed') throw new TypeError('Rectangle requires fixed direction');
+  const radius = type === 'circle' ? nonnegative(optionalNumber(config, 'radius', 10), 'radius') : 0;
+  const innerRadius = type === 'circle' ? nonnegative(optionalNumber(config, 'innerRadius', 0), 'innerRadius') : 0;
+  if (innerRadius > radius) throw new RangeError('innerRadius must be <= radius');
   return Object.freeze({
+    innerRadius, directionMode,
     type, offsetX: optionalNumber(config, 'offsetX', 0), offsetY: optionalNumber(config, 'offsetY', 0),
     directionRadians: optionalNumber(config, 'directionRadians', 0), spreadRadians,
     radius: type === 'circle' ? nonnegative(optionalNumber(config, 'radius', 10), 'radius') : 0,

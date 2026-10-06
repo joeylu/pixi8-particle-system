@@ -15,6 +15,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "typecheck": "node scripts/build.mjs --typecheck",
+    "test": "node --experimental-loader ./tests/dependency-loader.mjs --test tests/runtime.test.mjs",
     "prepack": "node scripts/build.mjs"
   }
 }

@@ -1,4 +1,4 @@
-import type { ParticleEffectConfig, ParticleEffectMainConfig } from '../composition/contracts.js';
+import type { ParticleEffectConfig, ParticleEffectMainConfig, ScalarRange } from '../composition/contracts.js';
 export interface ParticleTextureReference {
     asset: string;
     frame?: string;
@@ -36,9 +36,13 @@ type SelectionMode<M extends string> = {
 };
 export type ParticleTextureSheetAnimationConfig = (SelectionMode<'single'> & {
     index?: number;
-}) | SelectionMode<'random'> | (SelectionMode<'sequence'> & {
-    fps: number;
+}) | (SelectionMode<'random'> & {
+    indices?: readonly number[];
+}) | (SelectionMode<'sequence'> & {
+    fps: ScalarRange;
     loop?: boolean;
+    clips?: readonly (readonly number[])[];
+    randomStartFrame?: boolean;
 });
 export type TextureSheetAnimationConfig = ParticleTextureSheetAnimationConfig;
 export type ParticleFrameSelection = ParticleTextureSheetAnimationConfig;
@@ -47,10 +51,13 @@ export type NormalizedParticleFrameSelection = Readonly<{
     index?: number;
 }> | Readonly<{
     mode: 'random';
+    indices?: readonly number[];
 }> | Readonly<{
     mode: 'sequence';
-    fps: number;
+    fps: ScalarRange;
     loop?: boolean;
+    clips?: readonly (readonly number[])[];
+    randomStartFrame?: boolean;
 }>;
 type EntityModules = Omit<ParticleEffectConfig, 'main'> & {
     textureSheetAnimation?: ParticleTextureSheetAnimationConfig;
@@ -61,7 +68,7 @@ interface ParticleEntityLayerBase {
         x: number;
         y: number;
     };
-    activation: {
+    activation?: {
         mode: 'continuous';
     } | {
         mode: 'burst';
@@ -74,6 +81,8 @@ interface ParticleEntityLayerBase {
         textureSet: string;
         selection?: ParticleFrameSelection;
         blendMode?: 'normal' | 'add';
+        alignment?: 'fixed' | 'velocity';
+        forwardAngle?: number;
         trail?: {
             textureSet: string;
             blendMode?: 'normal' | 'add';

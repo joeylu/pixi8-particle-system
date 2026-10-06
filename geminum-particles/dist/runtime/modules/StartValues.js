@@ -19,11 +19,11 @@ export function createStartValues(config, seed = 1) {
                 p.vx = matrix.a * vx + matrix.c * vy;
                 p.vy = matrix.b * vx + matrix.d * vy;
             }
-            p.scaleX = scale;
-            p.scaleY = scale;
+            p.scaleX = scale * values.startScaleAspect.x;
+            p.scaleY = scale * values.startScaleAspect.y;
             p.rotation = sampleRange(values.startRotationRadians, seedValue, index, RandomChannel.Rotation);
             p.tint = values.startTint;
-            p.alpha = values.startAlpha;
+            p.alpha = sampleRange(values.startAlpha, seedValue, index, RandomChannel.Alpha);
             p.data.startScaleX = p.scaleX;
             p.data.startScaleY = p.scaleY;
             p.data.startRotationRadians = p.rotation;

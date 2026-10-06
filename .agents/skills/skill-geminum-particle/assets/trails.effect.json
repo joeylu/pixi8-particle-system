@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "id": "world-trails",
+  "textureSets": [
+    {
+      "id": "body",
+      "textures": [
+        {
+          "asset": "spark"
+        }
+      ]
+    },
+    {
+      "id": "ribbon",
+      "textures": [
+        {
+          "asset": "trail-ribbon"
+        }
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "id": "sparks",
+      "main": {
+        "startLifetime": 0.6,
+        "maxParticles": 32,
+        "maxBirthsPerUpdate": 32,
+        "randomSeed": 12,
+        "simulationSpace": "world",
+        "gravityModifier": 0,
+        "startSpeed": {
+          "min": 80,
+          "max": 120
+        },
+        "startScale": 0.2,
+        "startTint": 16755268,
+        "startAlpha": 1
+      },
+      "modules": {
+        "shape": {
+          "shapeType": "point",
+          "spreadRadians": 6.283185307179586
+        },
+        "forceOverLifetime": {
+          "x": 0,
+          "y": 80
+        },
+        "textureSheetAnimation": {
+          "selectionMode": "single"
+        },
+        "trails": {
+          "lifetime": 0.5,
+          "minVertexDistance": 4,
+          "worldSpace": true,
+          "dieWithParticles": false,
+          "width": 8,
+          "maxPointsPerTrail": 64,
+          "maxTrails": 32,
+          "breakDistance": 256,
+          "textureMode": "stretch"
+        },
+        "emission": {
+          "rateOverTime": 0,
+          "duration": 0,
+          "bursts": [
+            {
+              "time": 0,
+              "count": 8
+            }
+          ]
+        }
+      },
+      "renderer": {
+        "textureSet": "body",
+        "blendMode": "add",
+        "boundsArea": {
+          "x": -500,
+          "y": -500,
+          "width": 1000,
+          "height": 1000
+        },
+        "trail": {
+          "textureSet": "ribbon",
+          "blendMode": "add",
+          "tint": 16755268,
+          "alpha": 0.8
+        }
+      }
+    }
+  ]
+}

@@ -10,13 +10,17 @@ export interface StartValuesConfig {
     startRotationRadians?: ScalarRange;
     startRotation?: ScalarRange;
     startTint?: number;
-    startAlpha?: number;
+    startAlpha?: ScalarRange;
+    startScaleAspect?: {
+        x: number;
+        y: number;
+    };
 }
 export interface ParticleEffectMainConfig extends StartValuesConfig {
     maxParticles?: number;
     maxBirthsPerUpdate?: number;
     lifetimeSeconds?: number;
-    startLifetime?: number;
+    startLifetime?: ScalarRange;
     seed?: number;
     randomSeed?: number;
     simulationSpace?: 'local' | 'world';
@@ -27,6 +31,7 @@ export interface ShapeCommonConfig {
     offsetY?: number;
     directionRadians?: number;
     spreadRadians?: number;
+    directionMode?: 'fixed' | 'outward' | 'inward';
 }
 type ShapeName<T extends string> = {
     shapeType: T;
@@ -37,6 +42,7 @@ type ShapeName<T extends string> = {
 };
 export type ShapeConfig = (ShapeCommonConfig & ShapeName<'point'>) | (ShapeCommonConfig & ShapeName<'circle'> & {
     radius?: number;
+    innerRadius?: number;
 }) | (ShapeCommonConfig & ShapeName<'rectangle'> & {
     width?: number;
     height?: number;
@@ -48,34 +54,48 @@ export interface ForceOverLifetimeConfig {
     accelerationY?: number;
 }
 export type ForceConfig = ForceOverLifetimeConfig;
-export type EmissionModuleConfig = {
-    rateOverTime: number;
-    ratePerSecond?: never;
-} | {
-    ratePerSecond: number;
-    rateOverTime?: never;
-};
+export interface EmissionModuleConfig {
+    rateOverTime?: number;
+    ratePerSecond?: number;
+    startDelay?: number;
+    duration?: number;
+    loop?: boolean;
+    bursts?: readonly {
+        time: number;
+        count: number;
+    }[];
+}
 export interface ConstantForce {
     readonly accelerationX: number;
     readonly accelerationY: number;
 }
 export type ConstantForceFactory = () => ConstantForce;
+export type ParticleCurve = readonly {
+    t: number;
+    value: number;
+}[];
 export interface ColorOverLifetimeConfig {
     endTint?: number;
     endAlphaFactor?: number;
+    alphaCurve?: ParticleCurve;
+    colorCurve?: ParticleCurve;
 }
 export interface SizeOverLifetimeConfig {
     endScaleFactor?: number;
+    scaleCurve?: ParticleCurve;
 }
 export interface RotationOverLifetimeConfig {
-    z?: number;
-    angularSpeedRadians?: number;
+    z?: ScalarRange;
+    angularSpeedRadians?: ScalarRange;
 }
 export interface ParticleEffectConfig {
     trails?: TrailsConfig;
     main?: ParticleEffectMainConfig;
     emission?: EmissionModuleConfig;
     shape?: ShapeConfig;
+    limitVelocityOverLifetime?: {
+        drag: number;
+    };
     force?: ForceConfig;
     forceOverLifetime?: ForceOverLifetimeConfig;
     colorOverLifetime?: ColorOverLifetimeConfig;

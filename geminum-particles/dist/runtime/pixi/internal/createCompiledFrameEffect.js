@@ -6,7 +6,7 @@ import { combineTrailRenderer, requireTrailBinding } from './combineTrailRendere
 export function createCompiledFrameEffect(compiled, options, trailOptions) {
     const selection = normalizeParticleFrameSelection(options.textureSheetAnimation ?? options.selection);
     const lifetime = compiled.main.startLifetime ?? compiled.main.lifetimeSeconds;
-    if (selection.mode === 'sequence' && !Number.isFinite(selection.fps * lifetime))
+    if (selection.mode === 'sequence' && !Number.isFinite((typeof selection.fps === 'number' ? selection.fps : selection.fps.max) * lifetime))
         throw new RangeError('Sequence fps times lifetime must be finite');
     let renderer;
     let combined;

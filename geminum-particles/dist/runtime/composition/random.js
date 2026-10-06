@@ -1,6 +1,6 @@
 import { integer } from '../core/validation.js';
 import { seedSnapshot } from './config.js';
-export const RandomChannel = Object.freeze({ ShapeX: 1, ShapeY: 2, Direction: 3, Speed: 4, Scale: 5, Rotation: 6 });
+export const RandomChannel = Object.freeze({ ShapeX: 1, ShapeY: 2, Direction: 3, Speed: 4, Scale: 5, Rotation: 6, Lifetime: 8, Alpha: 9, AngularSpeed: 10, Clip: 11, Fps: 12, Phase: 13 });
 function mix(value) {
     let word = value >>> 0;
     word ^= word >>> 16;

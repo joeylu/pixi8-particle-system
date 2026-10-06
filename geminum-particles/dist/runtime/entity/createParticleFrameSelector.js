@@ -1,49 +1,48 @@
 import { finite, integer } from '../core/validation.js';
 import { seedSnapshot } from '../composition/config.js';
-import { sampleUnit } from '../composition/random.js';
+import { RandomChannel, sampleRange, sampleUnit } from '../composition/random.js';
 import { normalizeParticleFrameSelection } from './normalization.js';
 export function createParticleFrameSelector(selection, frameCount, seed = 1) {
-    if (arguments.length > 2 && arguments[2] === undefined)
-        throw new TypeError('seed cannot be explicitly undefined');
-    const normalized = normalizeParticleFrameSelection(selection);
+    const s = normalizeParticleFrameSelection(selection);
     integer(frameCount, 'frameCount', 1);
     const seedValue = seedSnapshot(seed);
-    const mode = normalized.mode;
-    let index = 0, fps = 0, loop = false;
-    if (mode === 'single') {
-        index = 'index' in normalized ? normalized.index : 0;
-        integer(index, 'selection.index', 0);
-        if (index >= frameCount)
-            throw new RangeError('selection.index is outside frameCount');
-    }
-    else if (mode === 'random') {
-        // The normalizer validates the mode-specific keys.
-    }
-    else if (mode === 'sequence') {
-        finite(normalized.fps, 'selection.fps');
-        if (normalized.fps <= 0)
-            throw new RangeError('selection.fps must be positive');
-        fps = normalized.fps;
-        if ('loop' in normalized) {
-            if (typeof normalized.loop !== 'boolean')
-                throw new TypeError('selection.loop must be boolean');
-            loop = normalized.loop;
+    const pool = (input, label) => {
+        if (!Array.isArray(input) || input.length === 0)
+            throw new TypeError(`${label} must be nonempty`);
+        const seen = new Set();
+        for (const n of input) {
+            integer(n, label, 0);
+            if (n >= frameCount || seen.has(n))
+                throw new RangeError(`Invalid ${label} ordinal`);
+            seen.add(n);
         }
+        return Object.freeze([...input]);
+    };
+    const all = Array.from({ length: frameCount }, (_, i) => i);
+    const indices = s.mode === 'random' ? pool(s.indices ?? all, 'indices') : all;
+    let clips = [all];
+    if (s.mode === 'sequence' && s.clips !== undefined) {
+        if (!Array.isArray(s.clips) || !s.clips.length)
+            throw new TypeError('clips must be nonempty');
+        clips = Object.freeze(s.clips.map(c => pool(c, 'clip')));
     }
-    else
-        throw new TypeError('selection.mode must be single, random or sequence');
+    if (s.mode === 'single')
+        pool([s.index ?? 0], 'index');
     return (birthIndex, ageSeconds) => {
         integer(birthIndex, 'birthIndex', 0);
         finite(ageSeconds, 'ageSeconds');
         if (ageSeconds < 0)
             throw new RangeError('ageSeconds must be nonnegative');
-        if (mode === 'single')
-            return index;
-        if (mode === 'random')
-            return Math.floor(sampleUnit(seedValue, birthIndex, 7) * frameCount);
-        const progress = ageSeconds * fps;
-        finite(progress, 'ageSeconds * selection.fps');
-        const frame = Math.floor(progress);
-        return loop ? frame % frameCount : Math.min(frame, frameCount - 1);
+        if (s.mode === 'single')
+            return s.index ?? 0;
+        if (s.mode === 'random')
+            return indices[Math.floor(sampleUnit(seedValue, birthIndex, 7) * indices.length)];
+        const clip = clips[Math.floor(sampleUnit(seedValue, birthIndex, RandomChannel.Clip) * clips.length)];
+        const fps = sampleRange(s.fps, seedValue, birthIndex, RandomChannel.Fps);
+        const phase = s.randomStartFrame ? sampleUnit(seedValue, birthIndex, RandomChannel.Phase) * clip.length : 0;
+        const progress = ageSeconds * fps + phase;
+        finite(progress, 'animation progress');
+        const ordinal = Math.floor(progress);
+        return clip[s.loop ? ordinal % clip.length : Math.min(ordinal, clip.length - 1)];
     };
 }

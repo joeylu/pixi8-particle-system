@@ -12,7 +12,7 @@ export function createCompiledFrameEffect(compiled: Omit<ParticleSystemOptions<P
   options: Omit<PixiFrameParticleRendererOptions, 'updateWrites'>, trailOptions?: PixiTrailRenderOptions) {
   const selection = normalizeParticleFrameSelection(options.textureSheetAnimation ?? options.selection!);
   const lifetime = compiled.main.startLifetime ?? compiled.main.lifetimeSeconds!;
-  if (selection.mode === 'sequence' && !Number.isFinite(selection.fps * lifetime)) throw new RangeError('Sequence fps times lifetime must be finite');
+  if (selection.mode === 'sequence' && !Number.isFinite((typeof selection.fps === 'number' ? selection.fps : selection.fps.max) * lifetime)) throw new RangeError('Sequence fps times lifetime must be finite');
   let renderer: PixiFrameParticleRenderer | undefined;
   let combined: ReturnType<typeof combineTrailRenderer<ParticleModuleData>> | undefined;
   let ownedRenderer: ParticleRenderer<ParticleModuleData> | undefined;

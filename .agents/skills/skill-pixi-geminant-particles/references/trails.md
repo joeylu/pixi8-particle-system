@@ -1,10 +1,10 @@
 # Trails
 
-Trails generate bounded paths from particle lifecycles. The [JSON Contract](effect.schema.json) exclusively owns configuration fields, ranges, and defaults. The [complete recipe](../assets/trails.effect.json) uses world particles and retention after death.
+Trails generate bounded paths from particle lifecycles. The [JSON Contract](../../skill-geminum-particle/references/effect.schema.json) exclusively owns configuration fields, ranges, and defaults. The [runtime fixture](../../skill-geminum-particle/assets/trails.effect.json) uses world particles and retention after death.
 
 ## Sampling and Budgets
 
-Start at the birth point and sample at the end of each Core slice, including the terminal point. Movement below the distance threshold updates only the live head; reaching minVertexDistance commits a path point. maxPointsPerTrail includes the live head and removes oldest points when full. maxTrails counts live particles and trails retained after death; exceeding it explicitly faults rather than discarding births. Movement exceeding breakDistance keeps the old segment fading and starts a new segment at the current point, without connecting the jump gap.
+Start at the birth point and sample at the end of each Core slice, including the terminal point. Movement below the distance threshold updates only the live head; reaching minVertexDistance commits a path point. maxPointsPerTrail includes the live head and removes oldest points when full. maxTrails counts live particles and trails retained after death; exceeding it explicitly faults rather than discarding births. Movement exceeding breakDistance keeps the old segment until its points expire and starts a new segment at the current point, without connecting the jump gap.
 
 lifetime is a multiplier of the parent particle's total lifetime; their product must be finite and positive. Committed points expire over time. This is not an array shifted by render fps; it does not reconstruct unobserved motion inside hooks or guarantee identical paths for every update partition. width is fixed in trail-basis pixels and does not scale with particle size. Trail tint/alpha are independent of particleAlpha; parent container alpha/tint inheritance still applies.
 
@@ -12,7 +12,9 @@ worldSpace=false follows the Main simulation basis. worldSpace=true transforms l
 
 ## Lifecycle
 
-birthId is not reused across reset/play, so pool object reuse cannot mix paths. stop enters draining until both particles and trails disappear, then stopped; hasPendingWork includes both. paused freezes sampling and decay. update(0) does not sample or decay, although existing space binding may refresh pose. dieWithParticles=true clears a trail when its parent dies; false allows sampled trails to continue decaying. reset/destroy clear all paths.
+birthId increases within a run; reset/play clear observer paths before restarting the identity sequence, so pool object reuse cannot mix retained paths. stop enters draining until both particles and trails disappear, then stopped; hasPendingWork includes both. paused freezes sampling and decay. update(0) does not sample or decay, although existing space binding may refresh pose. dieWithParticles=true clears a trail when its parent dies; false allows sampled trails to continue decaying. reset/destroy clear all paths.
+
+system.stop({killParticles:true}) ends active particles without advancing their age or resetting observers. Normal onDeath samples the current environment and records the terminal point at the current simulation time; dieWithParticles=false retains this trail until point TTL expiry, while true removes it immediately. Rendering synchronizes immediately. For entities, use entity.stop({killLayerIds:[actualHeadLayerId]}) so other layers stop emission and naturally drain; never copy a placeholder ID without matching the configuration. During pause, termination is immediate but retained trail decay stays frozen until resume into draining. Repeating the call adds no duplicate death samples. This operation does not provide collision detection or direction control.
 
 Generic lifecycle observation supplies only frozen numeric observations and birthId, without lending mutable data. Extensions observe birth, update completion, death before recycling, and each slice advance. They follow synchronous/reentry/error contracts and do not rewrite particles or bypass Core lifetime from observers.
 

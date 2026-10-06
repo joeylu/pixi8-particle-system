@@ -21,6 +21,7 @@ export declare class ParticleSystem<T extends object = Record<string, never>> {
     private nextBirthId;
     private observers;
     private main;
+    private sampleLifetime;
     private initializers;
     private updates;
     private resets;
@@ -49,7 +50,9 @@ export declare class ParticleSystem<T extends object = Record<string, never>> {
     play(): void;
     pause(): void;
     resume(): void;
-    stop(): void;
+    stop(options?: {
+        killParticles?: boolean;
+    }): void;
     setOrigin(x: number, y: number): void;
     emit(count: number): void;
     reset(): void;

@@ -56,12 +56,12 @@ export class PixiParticleEntity {
                 throw new Error('All layers must be stopped before play');
             this.layers.forEach(({ system }, index) => {
                 const activation = this.config.layers[index].activation;
-                if (activation.mode === 'continuous')
+                if (this.config.layers[index].modules?.emission || activation?.mode === 'continuous')
                     system.play();
-                else
+                else if (activation?.mode === 'burst')
                     system.emit(activation.count);
             });
-            this.mode = this.config.layers.some((layer) => layer.activation.mode === 'continuous') ? 'playing' : 'draining';
+            this.mode = this.layers.some(layer => layer.system.state === 'playing') ? 'playing' : this.layers.some(layer => layer.system.hasPendingWork) ? 'draining' : 'stopped';
         });
     }
     pause() {
@@ -80,11 +80,27 @@ export class PixiParticleEntity {
             if (system.state === 'paused')
                 system.resume(); this.mode = this.previous; });
     }
-    stop() {
+    stop(options) {
         this.guard(['stopped', 'playing', 'draining', 'paused']);
+        const killIds = new Set();
+        if (options !== undefined) {
+            object(options, 'Entity stop options');
+            knownKeys(options, ['killLayerIds'], 'Entity stop');
+            if ('killLayerIds' in options) {
+                if (!Array.isArray(options.killLayerIds))
+                    throw new TypeError('killLayerIds must be an array');
+                for (const id of options.killLayerIds) {
+                    if (typeof id !== 'string' || !this.layers.some(layer => layer.id === id))
+                        throw new TypeError('Unknown kill layer id');
+                    if (killIds.has(id))
+                        throw new TypeError('Duplicate kill layer id');
+                    killIds.add(id);
+                }
+            }
+        }
         this.run(() => {
-            for (const { system } of this.layers)
-                system.stop();
+            for (const { id, system } of this.layers)
+                system.stop(killIds.has(id) ? { killParticles: true } : undefined);
             if (!this.layers.some(layer => layer.system.hasPendingWork))
                 this.mode = 'stopped';
             else if (this.mode === 'paused')
@@ -119,7 +135,7 @@ export class PixiParticleEntity {
                 return;
             for (const { system } of this.layers)
                 system.update(seconds);
-            if (this.mode === 'draining' && this.layers.every(({ system }) => system.state === 'stopped'))
+            if (this.layers.every(({ system }) => system.state === 'stopped'))
                 this.mode = 'stopped';
         });
     }
@@ -201,6 +217,8 @@ export async function createPixiParticleEntity(options) {
             const effect = createCompiledFrameEffect(compiled, { textures: sets.get(layer.renderer.textureSet),
                 textureSheetAnimation: getParticleEntityLayerTextureSheetAnimation(layer),
                 randomSeed: effectConfig.main ? aliasValue(effectConfig.main, 'randomSeed', 'seed', 1) : 1,
+                ...('alignment' in layer.renderer ? { alignment: layer.renderer.alignment } : {}),
+                ...('forwardAngle' in layer.renderer ? { forwardAngle: layer.renderer.forwardAngle } : {}),
                 ...('blendMode' in layer.renderer ? { blendMode: layer.renderer.blendMode } : {}),
                 ...(bounds ? { boundsArea: new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height) } : {}) }, layer.renderer.trail ? {
                 texture: sets.get(layer.renderer.trail.textureSet)[0],

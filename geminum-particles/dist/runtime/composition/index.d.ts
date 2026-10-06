@@ -1,4 +1,4 @@
-export type { ScalarRange, StartValuesConfig, ParticleEffectMainConfig, ShapeConfig, ShapeCommonConfig, ForceConfig, ForceOverLifetimeConfig, EmissionModuleConfig, ConstantForce, ConstantForceFactory, ColorOverLifetimeConfig, SizeOverLifetimeConfig, RotationOverLifetimeConfig, ParticleEffectConfig, ParticleEffectEnvironment, ParticleModuleData, CreateParticleEffectOptions, } from './contracts.js';
+export type { ParticleCurve, ScalarRange, StartValuesConfig, ParticleEffectMainConfig, ShapeConfig, ShapeCommonConfig, ForceConfig, ForceOverLifetimeConfig, EmissionModuleConfig, ConstantForce, ConstantForceFactory, ColorOverLifetimeConfig, SizeOverLifetimeConfig, RotationOverLifetimeConfig, ParticleEffectConfig, ParticleEffectEnvironment, ParticleModuleData, CreateParticleEffectOptions, } from './contracts.js';
 export { compileParticleEffectConfig } from './compileParticleEffectConfig.js';
 export { createParticleEffect } from './createParticleEffect.js';
 export { createEmissionModule } from '../modules/ConstantRateEmission.js';

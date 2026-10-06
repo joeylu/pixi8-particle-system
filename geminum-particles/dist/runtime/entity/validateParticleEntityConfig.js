@@ -101,9 +101,11 @@ export function validateParticleEntityConfig(input) {
         sets.set(key, count);
     });
     const ids = new Set();
+    if (list(root.layers, '$.layers').length > 8)
+        fail('$.layers', 'maximum 8 layers');
     list(root.layers, '$.layers').forEach((value, index) => {
         const path = `$.layers[${index}]`;
-        const layer = object(value, path, ['id', 'origin', 'activation', 'main', 'core', 'modules', 'renderer'], ['id', 'activation', 'renderer']);
+        const layer = object(value, path, ['id', 'origin', 'activation', 'main', 'core', 'modules', 'renderer'], ['id', 'renderer']);
         const key = id(layer.id, `${path}.id`);
         if (ids.has(key))
             fail(`${path}.id`, 'duplicate identifier');
@@ -113,7 +115,7 @@ export function validateParticleEntityConfig(input) {
             number(o.x, `${path}.origin.x`);
             number(o.y, `${path}.origin.y`);
         }
-        const modules = 'modules' in layer ? object(layer.modules, `${path}.modules`, ['emission', 'shape', 'forceOverLifetime', 'force', 'colorOverLifetime', 'sizeOverLifetime', 'rotationOverLifetime', 'textureSheetAnimation', 'trails']) : {};
+        const modules = 'modules' in layer ? object(layer.modules, `${path}.modules`, ['limitVelocityOverLifetime', 'emission', 'shape', 'forceOverLifetime', 'force', 'colorOverLifetime', 'sizeOverLifetime', 'rotationOverLifetime', 'textureSheetAnimation', 'trails']) : {};
         const config = {};
         const main = getParticleEntityLayerMain(layer);
         if (main !== undefined) {
@@ -137,23 +139,25 @@ export function validateParticleEntityConfig(input) {
             config[name] = group;
         }
         const compiled = compileParticleEffectConfig(config);
-        const activation = object(layer.activation, `${path}.activation`, ['mode', 'count'], ['mode']);
-        if (activation.mode === 'continuous') {
-            if ('count' in activation)
-                fail(`${path}.activation.count`, 'unknown field');
-            if (!('emission' in modules))
-                fail(`${path}.modules.emission`, 'required for continuous activation');
+        if (!('activation' in layer) && !('emission' in modules))
+            fail(path, 'activation or emission is required');
+        if ('activation' in layer) {
+            const activation = object(layer.activation, `${path}.activation`, ['mode', 'count'], ['mode']);
+            if (activation.mode === 'continuous') {
+                if ('count' in activation)
+                    fail(`${path}.activation.count`, 'unknown field');
+                if (!('emission' in modules))
+                    fail(`${path}.modules.emission`, 'required for continuous activation');
+            }
+            else if (activation.mode === 'burst') {
+                const count = number(activation.count, `${path}.activation.count`, 1, true);
+                if (count > compiled.main.maxParticles || count > compiled.main.maxBirthsPerUpdate)
+                    fail(`${path}.activation.count`, 'exceeds capacity or birth budget');
+            }
+            else
+                fail(`${path}.activation.mode`, 'invalid mode');
         }
-        else if (activation.mode === 'burst') {
-            const count = number(activation.count, `${path}.activation.count`, 1, true);
-            if ('emission' in modules)
-                fail(`${path}.modules.emission`, 'forbidden for burst activation');
-            if (count > compiled.main.maxParticles || count > compiled.main.maxBirthsPerUpdate)
-                fail(`${path}.activation.count`, 'exceeds capacity or birth budget');
-        }
-        else
-            fail(`${path}.activation.mode`, 'invalid mode');
-        const renderer = object(layer.renderer, `${path}.renderer`, ['textureSet', 'selection', 'blendMode', 'boundsArea', 'trail'], ['textureSet']);
+        const renderer = object(layer.renderer, `${path}.renderer`, ['textureSet', 'selection', 'blendMode', 'boundsArea', 'trail', 'alignment', 'forwardAngle'], ['textureSet']);
         if (('trails' in modules) !== ('trail' in renderer))
             fail(`${path}.renderer.trail`, 'trails and trail renderer must be provided together');
         if ('trail' in renderer) {
@@ -179,8 +183,12 @@ export function validateParticleEntityConfig(input) {
             fail(`${path}.textureSheetAnimation`, String(error));
         }
         const selection = normalizeParticleFrameSelection(inputSelection);
-        if (selection.mode === 'sequence' && !Number.isFinite(selection.fps * compiled.main.lifetimeSeconds))
+        if (selection.mode === 'sequence' && !Number.isFinite((typeof selection.fps === 'number' ? selection.fps : selection.fps.max) * compiled.main.lifetimeSeconds))
             fail(`${path}.textureSheetAnimation.fps`, 'fps * lifetimeSeconds must be finite');
+        if ('alignment' in renderer && renderer.alignment !== 'fixed' && renderer.alignment !== 'velocity')
+            fail(path, 'invalid alignment');
+        if ('forwardAngle' in renderer)
+            number(renderer.forwardAngle, `${path}.renderer.forwardAngle`);
         if ('blendMode' in renderer && renderer.blendMode !== 'normal' && renderer.blendMode !== 'add')
             fail(`${path}.renderer.blendMode`, 'invalid blend mode');
         if ('boundsArea' in renderer) {

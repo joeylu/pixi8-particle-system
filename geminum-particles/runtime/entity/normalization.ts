@@ -1,4 +1,5 @@
-import { aliasValue, finite, integer, knownKeys, object } from '../core/validation.js';
+import { aliasValue, integer, knownKeys, object } from '../core/validation.js';
+import { rangeSnapshot } from '../composition/config.js';
 import type { ParticleEffectConfig, ParticleEffectMainConfig } from '../composition/contracts.js';
 import type { NormalizedParticleFrameSelection, ParticleEntityLayerConfig, ParticleFrameSelection, ParticleGridDimensions } from './contracts.js';
 
@@ -22,19 +23,21 @@ export function normalizeParticleFrameSelection(selection: ParticleFrameSelectio
   const mode = aliasValue(selection, 'selectionMode', 'mode');
   const data = selection as unknown as Record<string, unknown>;
   const allowed = mode === 'single' ? ['selectionMode', 'mode', 'index']
-    : mode === 'random' ? ['selectionMode', 'mode'] : mode === 'sequence' ? ['selectionMode', 'mode', 'fps', 'loop'] : [];
+    : mode === 'random' ? ['selectionMode', 'mode', 'indices'] : mode === 'sequence' ? ['selectionMode', 'mode', 'fps', 'loop', 'clips', 'randomStartFrame'] : [];
   knownKeys(selection, allowed, 'Texture sheet animation');
   for (const key of allowed) if (key in selection && data[key] === undefined) throw new TypeError(`${key} cannot be undefined`);
   if (mode === 'single') {
     if ('index' in selection) integer(selection.index, 'index', 0);
     return Object.freeze({ mode, ...('index' in selection ? { index: selection.index as number } : {}) });
   }
-  if (mode === 'random') return Object.freeze({ mode });
+  if (mode === 'random') return Object.freeze({ mode, ...('indices' in data ? { indices: data.indices as readonly number[] } : {}) });
   if (mode === 'sequence') {
-    const fps = data.fps;
-    finite(fps, 'fps'); if (fps <= 0) throw new RangeError('fps must be positive');
+    const fps = rangeSnapshot(data.fps, 'fps', true);
+    if ((typeof fps === 'number' ? fps : fps.min) <= 0) throw new RangeError('fps must be positive');
+    if ('randomStartFrame' in data && typeof data.randomStartFrame !== 'boolean') throw new TypeError('randomStartFrame must be boolean');
+    if (data.randomStartFrame === true && data.loop !== true) throw new RangeError('randomStartFrame requires loop');
     if ('loop' in selection && typeof selection.loop !== 'boolean') throw new TypeError('loop must be boolean');
-    return Object.freeze({ mode, fps, ...('loop' in selection ? { loop: selection.loop as boolean } : {}) });
+    return Object.freeze({ mode, fps, ...('clips' in data ? { clips: data.clips as readonly (readonly number[])[] } : {}), ...('randomStartFrame' in data ? { randomStartFrame: data.randomStartFrame as boolean } : {}), ...('loop' in selection ? { loop: selection.loop as boolean } : {}) });
   }
   throw new TypeError('selectionMode must be single, random or sequence');
 }

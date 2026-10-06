@@ -39,7 +39,7 @@ try {
     strict: true, noUnusedLocals: true, noUnusedParameters: true, skipLibCheck: true,
     noUncheckedSideEffectImports: true, noEmitOnError: true, noEmit: check, declaration: true,
     target: ts.ScriptTarget.ES2020, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler,
-    rootDir: root, outDir: stage, baseUrl: root, paths: {
+    rootDir: root, outDir: stage, paths: {
       'pixi.js': [path.join(pixiRoot, 'lib/index.d.ts')],
       'pixi.js/particle-container': [path.join(pixiRoot, 'lib/scene/particle-container/init.d.ts')],
       'pixi.js/mesh': [path.join(pixiRoot, 'lib/scene/mesh/init.d.ts')],

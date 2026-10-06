@@ -1,5 +1,5 @@
 import { Particle, ParticleContainer, Rectangle } from 'pixi.js';
-import { aliasValue, declaration, knownKeys, object } from '../core/validation.js';
+import { aliasValue, declaration, finite, knownKeys, object } from '../core/validation.js';
 import { createParticleFrameSelector, normalizeParticleFrameSelection } from '../entity/index.js';
 import { validateParticleTexture } from './createGridParticleTextures.js';
 export class PixiFrameParticleRenderer {
@@ -8,7 +8,7 @@ export class PixiFrameParticleRenderer {
         this.entries = new Map();
         this.disposing = false;
         object(options, 'Frame renderer options');
-        const keys = ['textures', 'textureSheetAnimation', 'selection', 'randomSeed', 'seed', 'updateWrites', 'blendMode', 'boundsArea'];
+        const keys = ['textures', 'textureSheetAnimation', 'selection', 'randomSeed', 'seed', 'updateWrites', 'blendMode', 'boundsArea', 'alignment', 'forwardAngle'];
         knownKeys(options, keys, 'Frame renderer options');
         for (const key of keys)
             if (key in options && options[key] === undefined)
@@ -20,6 +20,11 @@ export class PixiFrameParticleRenderer {
             validateParticleTexture(texture);
         if (textures.some((texture) => texture.source !== textures[0].source))
             throw new TypeError('Particle frames must share one TextureSource');
+        this.alignment = options.alignment ?? 'fixed';
+        this.forwardAngle = options.forwardAngle ?? 0;
+        finite(this.forwardAngle, 'forwardAngle');
+        if (this.alignment !== 'fixed' && this.alignment !== 'velocity')
+            throw new TypeError('Invalid alignment');
         const writes = new Set(declaration(options.updateWrites, 'updateWrites'));
         const blendMode = options.blendMode ?? 'normal';
         if (blendMode !== 'normal' && blendMode !== 'add')
@@ -37,7 +42,7 @@ export class PixiFrameParticleRenderer {
         this.container = new ParticleContainer({ texture: textures[0], blendMode,
             ...(bounds ? { boundsArea: new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height) } : {}),
             dynamicProperties: {
-                position: writes.has('x') || writes.has('y'), rotation: writes.has('rotation'),
+                position: writes.has('x') || writes.has('y'), rotation: writes.has('rotation') || this.alignment === 'velocity',
                 vertex: writes.has('scaleX') || writes.has('scaleY') || (this.sequence && varyingGeometry),
                 color: writes.has('alpha') || writes.has('tint'), uvs: this.sequence && textures.length > 1,
             } });
@@ -58,9 +63,13 @@ export class PixiFrameParticleRenderer {
         for (const state of snapshot.particles) {
             let entry = this.entries.get(state);
             if (!entry) {
-                entry = { particle: new Particle({ texture: this.textures[0], anchorX: .5, anchorY: .5 }), birthIndex: -1, index: 0 };
+                entry = { particle: new Particle({ texture: this.textures[0], anchorX: .5, anchorY: .5 }), birthIndex: -1, index: 0, heading: 0 };
                 this.entries.set(state, entry);
             }
+            if (entry.birthIndex !== state.data.birthIndex)
+                entry.heading = 0;
+            if (this.alignment === 'velocity' && Math.hypot(state.vx, state.vy) > 1e-8)
+                entry.heading = Math.atan2(state.vy, state.vx) - this.forwardAngle;
             if (this.sequence || changed || entry.birthIndex !== state.data.birthIndex) {
                 entry.index = this.select(state.data.birthIndex, state.ageSeconds);
                 entry.birthIndex = state.data.birthIndex;
@@ -69,7 +78,7 @@ export class PixiFrameParticleRenderer {
             particle.texture = this.textures[entry.index];
             particle.x = state.x;
             particle.y = state.y;
-            particle.rotation = state.rotation;
+            particle.rotation = state.rotation + (this.alignment === 'velocity' ? entry.heading : 0);
             particle.scaleX = state.scaleX;
             particle.scaleY = state.scaleY;
             particle.tint = state.tint;

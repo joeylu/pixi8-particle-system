@@ -1,0 +1,16 @@
+{
+  "recipes": [
+    {"id":"laser-beam","title":"镭射与持续直束","file":"recipes/laser-beam.md","when":"两端之间持续连接、固定方向直梁。束身与端点分开；动态长度需要宿主适配。"},
+    {"id":"energy-bolt","title":"快速能量弹","file":"recipes/energy-bolt.md","when":"短而亮的方向性弹头、紧凑高速尾迹；不是持续连接两端。"},
+    {"id":"fireball","title":"火球与火焰弹","file":"recipes/fireball.md","when":"明确燃烧主体、热核与破碎火尾，火星作为次要运动。"},
+    {"id":"exhaust","title":"喷口尾焰与排气","file":"recipes/exhaust.md","when":"依附外部喷口的热流、排气或推进尾迹，可没有内部弹头，静止也能排气。"},
+    {"id":"meteor","title":"流星与彗星","file":"recipes/meteor.md","when":"尖亮头、长历史尾与稀星屑；燃烧陨弹还需粗糙主体与烟碎屑。"},
+    {"id":"electric-bolt","title":"飞行电能弹","file":"recipes/electric-bolt.md","when":"移动核心与分叉电纹、电性断续尾迹；固定局部放电属于particle/electricity。"},
+    {"id":"ice-shard","title":"冰片与寒霜弹","file":"recipes/ice-shard.md","when":"方向清晰的棱角碎片、冷雾与脱落细晶，保留硬边主体。"},
+    {"id":"arrow","title":"箭矢与穿刺弹","file":"recipes/arrow.md","when":"细长尖头、稳定前向、轻尾，轮廓可读性比光晕重要。"},
+    {"id":"blade-wave","title":"刀光与弧形波","file":"recipes/blade-wave.md","when":"向前传播的弧形刃缘与薄面，区别于箭矢和沿路径延展的尾带。"},
+    {"id":"spinning","title":"旋转投掷物","file":"recipes/spinning.md","when":"可辨认多尖／环状主体沿自身中心旋转并平移，区别于粒子绕轨道公转。"},
+    {"id":"wind","title":"风旋与气流弹","file":"recipes/wind.md","when":"稀疏弧带、负空间与风切流线，三维旋涡需二维帧序列或明确近似。"},
+    {"id":"magic-orb","title":"魔法光团","file":"recipes/magic-orb.md","when":"饱满光团、呼吸感与少量伴随符号／星尘，速度和尖尾不是主体。"}
+  ]
+}

@@ -1,30 +1,14 @@
-# Unity 6.6 Naming and Semantics
+# Unity terminology boundaries
 
-Naming follows lowerCamelCase in the Unity 6.6 (6000.6) Scripting API. This JSON is a Geminant contract, not a Unity serialization import format. The Unity Inspector displays rotation in degrees/degrees per second; do not copy those numeric values directly into Geminant's radians/radians per second. The [runtime API](runtime-api.md) owns parameter types, ranges, defaults, and APIs; the [schema](effect.schema.json) owns JSON structure.
+Geminant uses lowerCamelCase names for familiar particle concepts, but its JSON is not Unity serialization. [Runtime API](runtime-api.md) owns SDK wiring; the [effect Schema](../../skill-geminum-particle/references/effect.schema.json) owns configuration structure.
 
-| Canonical | Compatible alias | Semantic boundary |
-| --- | --- | --- |
-| layer.main | layer.core | The same Main assembly configuration |
-| main.startLifetime | lifetimeSeconds | Fixed lifetime in seconds; state.lifetimeSeconds remains the read-only total lifetime provided by Core |
-| main.startRotation | startRotationRadians | Single value/range, in radians |
-| main.randomSeed | seed | uint32; a ParticleSystem property in Unity, organized under main in Geminant |
-| emission.rateOverTime | ratePerSecond | Constant particles per second; exactly one is required |
-| shape.shapeType | type | point/circle/rectangle; direction/spread/offset/width/height retain their original semantics and are not named arc/angle |
-| modules.forceOverLifetime | force | Constant acceleration provider |
-| forceOverLifetime.x/y | accelerationX/Y | Container-local pixels/second squared; analytically integrated by KinematicMotion |
-| rotationOverLifetime.z | angularSpeedRadians | Radians per second |
-| grid.numTilesX/numTilesY | columns/rows | Exactly one name is required per axis; mixing numTilesX+rows is valid |
-| modules.textureSheetAnimation | renderer.selection | Exactly one is required per entity layer |
-| textureSheetAnimation.selectionMode | mode | Geminant's single/random/sequence frame-selection strategy |
+startLifetime is seconds; startRotation and rotationOverLifetime.z use radians and radians/second. Unity Inspector degrees cannot be copied numerically. startScale scales Texture.orig rather than specifying Unity world startSize. startTint and startAlpha are separate and multiply texture appearance.
 
-Do not provide both members of an alias pair, even when their values are equal. Defaults apply only when optional fields are omitted; explicit undefined is not omission. validate/parse return an independent, deeply frozen snapshot of the input structure without renaming fields or filling defaults; assembly reads their unified meaning.
+emission describes a time schedule; shapeType point/circle/rectangle uses two-dimensional geometry. directionRadians/spreadRadians are planar radians, not a 3D cone angle. limitVelocityOverLifetime.drag is linear drag in 1/s, not a copied Unity damping constant. KinematicMotion owns combined integration.
 
-selectionMode differs from Unity's Grid/Sprites mode. textureSets defines frame image sources. The single index is an integer index, not Unity's normalized startFrame; sequence loop is not cycleCount. Strategies have no timeMode, cycleCount, frame offset, or custom frame-selection parameters. Pure Core compile does not consume textureSheetAnimation; PixiFrameEffect/Renderer or JSON Entity consumes frame configuration.
+textureSheetAnimation.selectionMode chooses single/random/sequence. Grid dimensions describe texture layout; single index is an ordinal, clips preserve explicit order, and fps is frames/second. This differs from Unity's normalized startFrame/timeMode/cycleCount.
 
-startScale/Tint/Alpha retain Geminant semantics: scale scales Texture.orig and is not Unity startSize; tint and alpha are separate and do not directly equal Unity startColor. colorOverLifetime endTint/endAlphaFactor and sizeOverLifetime endScaleFactor are restricted forms, not Unity curves. direction/spread remain in radians. KinematicMotion is the integrator and is not named VelocityOverLifetime.
+simulationSpace is local/world; gravityModifier scales a host-supplied world vector. World appearance is configuration-driven while position/velocity use the emitter affine. No custom-space or scalingMode field is available.
 
-The corresponding factories are createEmissionModule, createShapeModule, createMainStartValues, createForceOverLifetimeModule, createColorOverLifetimeModule, createSizeOverLifetimeModule, createRotationOverLifetimeModule, and createTextureSheetAnimationFrameSelector. See the runtime API for equivalent factory exports and shared provider IDs; do not install the same field-writing module twice.
-
-Main.simulationSpace uses local/world. Main.gravityModifier is a signed single value rather than a curve; the host injects the gravity baseline as a world vector, and Geminant does not read Physics3D gravity. See [space and gravity](space-gravity.md) for details. There are no custom space, scalingMode, or gravitySource extensions.
-
-Trails uses Geminant's fixed-width, single Stretch material, bounded-path contract. lifetime is a multiplier of the parent's total lifetime, not an equivalent of all Unity Trails options or curves. See [Trails](trails.md) for complete parameter constraints.
+Trails is fixed-width Stretch geometry with bounded observed paths; lifetime multiplies the parent total lifetime. It does not provide the full Unity Trails/Ribbon options. Do not add unimplemented Unity module fields to configuration.
+Shape directionMode inward reuses the circle birth radial angle plus π, with nonnegative startSpeed. It launches toward the circle center at birth; it is not a continuous centripetal force or vortex. Point inward reverses its sampled planar direction, and rectangle requires fixed. Spread is applied around the chosen direction.

@@ -6,11 +6,12 @@
   <meta name="theme-color" content="#141819" />
   <title>Particle Lab · Particle System</title>
 </head>
-<body>
+<body data-mode="particle">
   <main id="app" class="editor-shell">
     <header class="app-header">
-      <div class="brand"><span class="brand-mark">G</span><span class="brand-label">/ PARTICLE LAB</span><span class="version-badge">PIXI <span id="version">8</span></span></div>
-      <h1>Particle System</h1><span class="workspace-kind">SINGLE EMITTER</span>
+      <div class="brand"><span class="brand-mark">G</span><span id="brand-label" class="brand-label">/ PARTICLE LAB</span><span class="version-badge">PIXI <span id="version">8</span></span></div>
+      <nav class="mode-nav" aria-label="Effect workspace"><button id="mode-particle" data-mode="particle" type="button" aria-pressed="true">Particle</button><button id="mode-projectile" data-mode="projectile" type="button" aria-pressed="false">Projectile</button></nav>
+      <h1 id="workspace-title">Particle System</h1><span id="workspace-kind" class="workspace-kind">PARTICLE WORKSPACE</span>
     </header>
     <div id="error-banner" class="error-banner" role="alert" hidden><span id="error-message"></span><button id="dismiss-error" type="button">Dismiss</button></div>
     <div id="workspace" class="workspace">
@@ -19,12 +20,17 @@
           <div class="viewport-heading"><h2>Scene preview</h2><span>2D / WebGL</span></div>
           <div class="viewport-options">
             <label><input id="grid-toggle" type="checkbox" checked /> Grid</label>
-            <label><input id="follow-pointer" type="checkbox" /> Follow pointer</label>
+            <label id="follow-pointer-label"><input id="follow-pointer" type="checkbox" /> Follow pointer</label>
             <button id="center" type="button">Center</button>
           </div>
         </header>
         <div id="stage" class="viewport show-grid" aria-label="Particle preview. Drag to move the emitter.">
-          <div id="emitter-marker" class="emitter-marker" aria-hidden="true"></div><span class="viewport-caption">Drag to move emitter</span>
+          <svg id="flight-guide" class="flight-guide" aria-hidden="true" hidden><line id="flight-guide-line" x1="0" y1="0" x2="0" y2="0" /></svg>
+          <div id="emitter-marker" class="emitter-marker" aria-hidden="true"></div>
+          <div id="start-marker" class="scene-marker start-marker" aria-hidden="true" hidden><span>START</span></div>
+          <div id="target-marker" class="scene-marker target-marker" aria-hidden="true" hidden><span>TARGET</span></div>
+          <div id="head-marker" class="scene-marker head-marker" aria-hidden="true" hidden></div>
+          <span id="viewport-caption" class="viewport-caption">Drag to move emitter</span>
         </div>
         <footer class="transport">
           <div class="transport-actions">
@@ -36,17 +42,29 @@
           </div>
           <div class="preview-stats"><span id="status" role="status">Initializing…</span><span><strong id="count">0</strong> particles</span><span><strong id="fps">0</strong> fps</span><span><strong id="elapsed">0.0</strong> s</span></div>
         </footer>
+        <section id="projectile-controls" class="projectile-controls" aria-label="Projectile flight controls" hidden>
+          <div class="host-actions"><button id="launch" class="primary-button" type="button" disabled>Launch</button><button id="hit" type="button" disabled>Hit now</button></div>
+          <label class="host-speed" for="host-speed">Speed <input id="host-speed" type="range" min="100" max="1000" step="10" value="320" /><input id="host-speed-value" aria-label="Flight speed in pixels per second" type="number" min="100" max="1000" step="10" value="320" /><span>px/s</span></label>
+          <div class="host-options"><label><input id="host-loop" type="checkbox" /> Loop</label><label class="host-delay" for="host-loop-delay">Delay <input id="host-loop-delay" type="number" min="0" max="5" step="0.1" value="0.5" /><span>s</span></label><label><input id="host-flash" type="checkbox" checked /> Launch flash</label><label><input id="host-impact" type="checkbox" checked /> Impact</label></div>
+        </section>
         <section class="preset-section" aria-labelledby="presets-title">
           <div class="section-heading"><h2 id="presets-title">STARTING POINTS</h2><span>Choose a preset to begin</span></div><div id="presets" class="preset-grid"></div>
         </section>
       </section>
       <aside class="inspector" aria-labelledby="inspector-title">
         <header class="inspector-header"><div><h2 id="inspector-title">Inspector <span id="module-count" class="module-count">9 modules</span></h2><p id="preset-name">Embers</p></div><button id="reset-settings" type="button">Reset preset</button></header>
+        <section class="layer-bar" aria-label="Active layer"><div class="layer-selection"><label for="layer-select">LAYER</label><select id="layer-select" aria-label="Active layer"></select><label class="layer-enabled"><input id="layer-enabled" type="checkbox" checked /> Enabled</label></div><p id="layer-role" class="layer-role">Emitter layer</p></section>
         <div id="inspector-modules" class="inspector-modules"></div>
-        <footer class="inspector-footer"><span class="hint-dot" aria-hidden="true"></span>Changes restart the simulation.</footer>
+        <footer class="inspector-footer"><span class="hint-dot" aria-hidden="true"></span>Changes restart the simulation.<button id="export-config" type="button">View JSON</button></footer>
       </aside>
     </div>
   </main>
+  <dialog id="config-dialog" class="config-dialog" aria-labelledby="config-title">
+    <header><h2 id="config-title">Effect JSON</h2><button id="close-config" type="button" aria-label="Close effect JSON">×</button></header>
+    <p id="config-filename"></p>
+    <textarea id="config-source" readonly spellcheck="false" aria-label="Validated effect JSON"></textarea>
+    <footer><span id="copy-status" role="status"></span><button id="copy-config" type="button">Copy JSON</button></footer>
+  </dialog>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

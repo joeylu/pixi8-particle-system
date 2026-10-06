@@ -1,4 +1,4 @@
-import { compileParticleEffectConfig } from 'geminant-particles/core';
+import { validateParticleEntityConfig } from 'geminant-particles/config';
 
 export const ASSETS = [
   { id: 'fire.spark', label: 'Spark', family: 'fire', url: new URL('./assets/particles/fire/fire-spark.png', import.meta.url).href, width: 64, height: 64 },
@@ -62,92 +62,215 @@ export function createPreset(id = 'embers') {
     state.color.endTint = '#856649'; state.size.endScaleFactor = 0.25;
     Object.assign(state.renderer, { texture: 'dust.chip', blendMode: 'normal', trailTexture: 'dust.chip', trailTint: '#d1b996', trailBlendMode: 'normal' });
   }
+  state.id = 'particles'; state.label = PRESETS.find((preset) => preset.id === id).label;
+  state.role = 'particle'; state.active = true;
+  state.main.startLifetime = { min: state.main.startLifetime, max: state.main.startLifetime };
+  state.main.startAlpha = { min: state.main.startAlpha, max: state.main.startAlpha };
+  state.main.startScaleAspect = { x: 1, y: 1 };
+  state.rotation.degreesPerSecond = { min: state.rotation.degreesPerSecond, max: state.rotation.degreesPerSecond };
+  state.enabled.drag = false; state.drag = { drag: 0 };
+  Object.assign(state.emission, { startDelay: 0, finite: false, duration: 1, loop: false, bursts: [] });
+  Object.assign(state.shape, { innerRadius: 0, directionMode: 'fixed' });
+  Object.assign(state.color, { useAlphaCurve: false, alphaCurve: [{ t: 0, value: 1 }, { t: 1, value: 0 }],
+    useColorCurve: false, colorCurve: [{ t: 0, value: '#ffffff' }, { t: 1, value: state.color.endTint }] });
+  Object.assign(state.size, { useScaleCurve: false, scaleCurve: [{ t: 0, value: 1 }, { t: 1, value: state.size.endScaleFactor }] });
+  Object.assign(state.renderer, { alignment: 'fixed', forwardDegrees: 0 });
+  delete state.preset;
+  delete state.scene;
   return state;
 }
 
+export const PROJECTILE_PRESETS = [
+  { id: 'energy-bolt', label: 'Energy bolt', description: 'A soft cyan head with a thin retained ribbon', textureId: 'smoke.soft' },
+  { id: 'fireball', label: 'Fireball', description: 'An ember head shedding sparks and soft smoke', textureId: 'fire.ember' },
+  { id: 'meteor', label: 'Meteor', description: 'A debris head with a hot trail and lingering dust', textureId: 'dust.chip' },
+];
+
+const pair = (value) => ({ min: value, max: value });
+const identity = () => [{ t: 0, value: 1 }, { t: 1, value: 1 }];
+const radians = (value) => value * Math.PI / 180;
+
+export function createWorkspace(mode = 'particle', presetId) {
+  choice(mode, ['particle', 'projectile'], 'mode');
+  const presets = mode === 'particle' ? PRESETS : PROJECTILE_PRESETS;
+  const preset = presetId ?? presets[0].id;
+  if (!presets.some((entry) => entry.id === preset)) throw new Error(`Unknown preset: ${preset}`);
+  let layers;
+  if (mode === 'particle') layers = [createPreset(preset)];
+  else {
+    const material = presets.find((entry) => entry.id === preset).textureId;
+    const head = createPreset(preset === 'meteor' ? 'dust' : 'embers');
+    Object.assign(head, { id: 'head', label: 'Projectile head', role: 'head' });
+    Object.assign(head.main, { maxParticles: 8, maxBirthsPerUpdate: 8, startLifetime: pair(12),
+      startSpeed: pair(0), startScale: pair(preset === 'energy-bolt' ? 0.28 : 0.7),
+      startRotation: pair(0), startAlpha: pair(1), simulationSpace: 'local', gravityModifier: 0,
+      startTint: preset === 'energy-bolt' ? '#9ceaff' : '#ffb768', startScaleAspect: { x: preset === 'energy-bolt' ? 1.8 : 1, y: preset === 'energy-bolt' ? 0.6 : 1 } });
+    Object.assign(head.emission, { rateOverTime: 0, finite: true, duration: 0, bursts: [{ time: 0, count: 1 }], burstCount: 1 });
+    head.shape.shapeType = 'point'; head.shape.directionDegrees = 0; head.shape.spreadDegrees = 0;
+    head.enabled.force = false; head.enabled.rotation = false; head.enabled.trails = true;
+    Object.assign(head.color, { endTint: '#ffffff', endAlphaFactor: 1, useAlphaCurve: true, alphaCurve: identity(),
+      useColorCurve: true, colorCurve: [{ t: 0, value: '#ffffff' }, { t: 1, value: '#ffffff' }] });
+    Object.assign(head.size, { endScaleFactor: 1, useScaleCurve: true, scaleCurve: identity() });
+    Object.assign(head.trails, { lifetime: 0.035, width: preset === 'energy-bolt' ? 10 : 18,
+      maxPointsPerTrail: 128, maxTrails: 16, minVertexDistance: 3, worldSpace: true, dieWithParticles: false });
+    Object.assign(head.renderer, { texture: material, blendMode: 'add', trailTexture: preset === 'energy-bolt' ? 'smoke.soft' : 'fire.spark',
+      trailTint: head.main.startTint, trailAlpha: 0.8, trailBlendMode: 'add' });
+    const tail = createPreset(preset === 'energy-bolt' ? 'embers' : 'smoke');
+    Object.assign(tail, { id: 'tail', label: preset === 'energy-bolt' ? 'World sparks' : 'World smoke', role: 'tail' });
+    Object.assign(tail.main, { simulationSpace: 'world', startLifetime: { min: 0.45, max: preset === 'energy-bolt' ? 0.8 : 1.7 },
+      startSpeed: { min: 5, max: 24 }, startScale: { min: 0.13, max: 0.24 }, gravityModifier: 0 });
+    Object.assign(tail.emission, { rateOverTime: preset === 'energy-bolt' ? 45 : 28 });
+    Object.assign(tail.shape, { radius: 5, directionDegrees: 180, spreadDegrees: 60 });
+    tail.force = { x: 0, y: -4 };
+    if (preset === 'energy-bolt') {
+      tail.renderer.texture = 'smoke.soft'; tail.renderer.blendMode = 'add';
+      tail.main.startScale = { min: 0.04, max: 0.08 }; tail.main.startTint = '#9ceaff';
+      tail.color.endTint = '#4fa7df';
+    }
+    if (preset === 'meteor') { tail.renderer.texture = 'dust.puff'; tail.main.startTint = '#9c8065'; }
+    if (preset === 'fireball') { tail.renderer.texture = 'fire.smoke'; tail.main.startTint = '#ad8c77'; }
+    layers = [tail, head];
+  }
+  return { mode, preset, selectedLayerId: layers.at(-1).id,
+    scene: { gravityX: 0, gravityY: 300, background: '#10151d', grid: true, followPointer: false, timeScale: 1 },
+    host: { speed: 380, loop: false, loopDelay: 0.8, launchFlash: true, impact: true }, layers };
+}
+
+export function getSelectedLayer(workspace) {
+  return workspace.layers.find((layer) => layer.id === workspace.selectedLayerId) ?? workspace.layers[0];
+}
+
 function number(value, label, min = -Infinity, max = Infinity, integer = false) {
-  if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error(`${label} must be finite`);
-  if (value < min || value > max || (integer && !Number.isSafeInteger(value))) throw new Error(`${label} must be ${integer ? 'an integer ' : ''}in [${min}, ${max}]`);
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max || (integer && !Number.isSafeInteger(value))) {
+    throw new Error(`${label} must be ${integer ? 'an integer ' : ''}in [${min}, ${max}]`);
+  }
+  return value;
 }
 function boolean(value, label) {
   if (typeof value !== 'boolean') throw new Error(`${label} must be boolean`);
+  return value;
 }
 function choice(value, values, label) {
   if (!values.includes(value)) throw new Error(`${label} must be one of ${values.join(', ')}`);
+  return value;
 }
 function tint(value, label) {
-  if (typeof value !== 'string' || !/^#[0-9a-f]{6}$/i.test(value)) throw new Error(`${label} must be #rrggbb`);
+  if (typeof value !== 'string' || !/^#[0-9a-f]{6}$/i.test(value)) throw new Error(`${label} must be #RRGGBB`);
   return Number.parseInt(value.slice(1), 16);
 }
-const radians = (degrees) => degrees * (Math.PI / 180);
-function range(value, label, nonnegative = false, angle = false) {
+function range(value, label, min = -Infinity, max = Infinity, angle = false) {
   if (!value || typeof value !== 'object') throw new Error(`${label} requires min and max`);
-  number(value.min, `${label}.min`, nonnegative ? 0 : -Infinity);
-  number(value.max, `${label}.max`, nonnegative ? 0 : -Infinity);
+  number(value.min, `${label}.min`, min, max); number(value.max, `${label}.max`, min, max);
   if (value.min > value.max) throw new Error(`${label}.min must be <= max`);
   return { min: angle ? radians(value.min) : value.min, max: angle ? radians(value.max) : value.max };
 }
+function curve(nodes, label, rgb = false) {
+  if (!Array.isArray(nodes) || nodes.length < 2 || nodes.length > 8) throw new Error(`${label} requires 2–8 nodes`);
+  let previous = -1;
+  const output = nodes.map((node) => {
+    number(node.t, `${label}.t`, 0, 1);
+    if (node.t <= previous) throw new Error(`${label}.t must be strictly increasing`);
+    previous = node.t;
+    return { t: node.t, value: rgb ? tint(node.value, `${label}.value`) : number(node.value, `${label}.value`, 0) };
+  });
+  if (output[0].t !== 0 || output.at(-1).t !== 1) throw new Error(`${label} must cover t=0 and t=1`);
+  return output;
+}
 
-export function toRuntimeConfig(state) {
-  if (!state || typeof state !== 'object') throw new Error('Editor state must be an object');
-  for (const key of ['enabled', 'main', 'emission', 'shape', 'force', 'color', 'size', 'rotation', 'trails', 'renderer', 'scene']) {
-    if (!state[key] || typeof state[key] !== 'object') throw new Error(`${key} must be an object`);
+function convertLayer(layer, manual = false) {
+  const { main, emission, enabled, shape, force, drag, color, size, rotation, trails, renderer } = layer;
+  for (const key of ['emission', 'shape', 'force', 'drag', 'color', 'size', 'rotation', 'trails']) boolean(enabled[key], `enabled.${key}`);
+  const output = { id: layer.id, main: {
+    maxParticles: main.maxParticles, maxBirthsPerUpdate: main.maxBirthsPerUpdate,
+    startLifetime: range(main.startLifetime, 'main.startLifetime', Number.MIN_VALUE),
+    startAlpha: range(main.startAlpha, 'main.startAlpha', 0, 1),
+    startSpeed: range(main.startSpeed, 'main.startSpeed', 0), startScale: range(main.startScale, 'main.startScale', 0),
+    startScaleAspect: { x: number(main.startScaleAspect.x, 'main.startScaleAspect.x', Number.MIN_VALUE), y: number(main.startScaleAspect.y, 'main.startScaleAspect.y', Number.MIN_VALUE) },
+    startRotation: range(main.startRotation, 'main.startRotation', -Infinity, Infinity, true),
+    startTint: tint(main.startTint, 'main.startTint'), randomSeed: main.randomSeed,
+    gravityModifier: main.gravityModifier, simulationSpace: main.simulationSpace }, modules: {},
+    renderer: { textureSet: choice(renderer.texture, ASSETS.map((asset) => asset.id), 'renderer.texture'),
+      selection: { selectionMode: 'single', index: 0 }, blendMode: renderer.blendMode,
+      alignment: renderer.alignment, forwardAngle: radians(number(renderer.forwardDegrees, 'renderer.forwardDegrees')) } };
+  const modules = output.modules;
+  if (manual) {
+    modules.emission = { rateOverTime: 0, duration: 0, loop: false, bursts: [{ time: 0,
+      count: number(emission.burstCount, 'emission.burstCount', 1, Math.min(main.maxParticles, main.maxBirthsPerUpdate), true) }] };
+  } else if (enabled.emission) {
+    boolean(emission.finite, 'emission.finite'); boolean(emission.loop, 'emission.loop');
+    modules.emission = { rateOverTime: emission.rateOverTime, startDelay: emission.startDelay,
+      loop: emission.finite && emission.loop, bursts: emission.bursts.map(({ time, count }) => ({ time, count })) };
+    if (emission.finite) modules.emission.duration = emission.duration;
+  } else {
+    // The SDK requires an emission schedule; disabled emission has no births.
+    modules.emission = { rateOverTime: 0 };
   }
-  const { main, emission, shape, force, color, size, rotation, trails, renderer, scene, enabled } = state;
-  choice(state.preset, PRESETS.map((preset) => preset.id), 'preset');
-  for (const key of ['emission', 'shape', 'force', 'color', 'size', 'rotation', 'trails']) boolean(enabled[key], `enabled.${key}`);
-  number(main.maxParticles, 'main.maxParticles', 1, Number.MAX_SAFE_INTEGER, true);
-  number(main.maxBirthsPerUpdate, 'main.maxBirthsPerUpdate', 1, Number.MAX_SAFE_INTEGER, true);
-  number(main.startLifetime, 'main.startLifetime', Number.MIN_VALUE);
-  number(main.randomSeed, 'main.randomSeed', 0, 0xffffffff, true);
-  number(main.startAlpha, 'main.startAlpha', 0, 1);
-  number(main.gravityModifier, 'main.gravityModifier');
-  choice(main.simulationSpace, ['local', 'world'], 'main.simulationSpace');
-  const effect = { main: { ...main, startSpeed: range(main.startSpeed, 'main.startSpeed', true), startScale: range(main.startScale, 'main.startScale', true), startRotation: range(main.startRotation, 'main.startRotation', false, true), startTint: tint(main.startTint, 'main.startTint') } };
-  if (enabled.emission) number(emission.rateOverTime, 'emission.rateOverTime', 0);
-  number(emission.burstCount, 'emission.burstCount', 1, Math.min(main.maxParticles, main.maxBirthsPerUpdate), true);
   if (enabled.shape) {
-    choice(shape.shapeType, ['point', 'circle', 'rectangle'], 'shape.shapeType');
-    if (shape.shapeType === 'circle') number(shape.radius, 'shape.radius', 0);
-    if (shape.shapeType === 'rectangle') for (const key of ['width', 'height']) number(shape[key], `shape.${key}`, 0);
-    for (const key of ['offsetX', 'offsetY', 'directionDegrees']) number(shape[key], `shape.${key}`);
-    number(shape.spreadDegrees, 'shape.spreadDegrees', 0, 360);
+    modules.shape = { shapeType: shape.shapeType, directionMode: shape.shapeType === 'rectangle' ? 'fixed' : shape.directionMode,
+      offsetX: shape.offsetX, offsetY: shape.offsetY,
+      directionRadians: radians(number(shape.directionDegrees, 'shape.directionDegrees')),
+      spreadRadians: radians(number(shape.spreadDegrees, 'shape.spreadDegrees', 0, 360)) };
+    if (shape.shapeType === 'circle') Object.assign(modules.shape, { radius: shape.radius, innerRadius: shape.innerRadius });
+    if (shape.shapeType === 'rectangle') Object.assign(modules.shape, { width: shape.width, height: shape.height });
   }
-  if (enabled.force) { number(force.x, 'force.x'); number(force.y, 'force.y'); }
-  const endTint = enabled.color ? tint(color.endTint, 'color.endTint') : undefined;
-  if (enabled.color) number(color.endAlphaFactor, 'color.endAlphaFactor', 0, 1);
-  if (enabled.size) number(size.endScaleFactor, 'size.endScaleFactor', 0);
-  if (enabled.rotation) number(rotation.degreesPerSecond, 'rotation.degreesPerSecond');
+  if (enabled.force) modules.forceOverLifetime = { x: force.x, y: force.y };
+  if (enabled.drag) modules.limitVelocityOverLifetime = { drag: drag.drag };
+  if (enabled.color) {
+    boolean(color.useAlphaCurve, 'color.useAlphaCurve'); boolean(color.useColorCurve, 'color.useColorCurve');
+    modules.colorOverLifetime = {
+      ...(color.useAlphaCurve ? { alphaCurve: curve(color.alphaCurve, 'color.alphaCurve') } : { endAlphaFactor: color.endAlphaFactor }),
+      ...(color.useColorCurve ? { colorCurve: curve(color.colorCurve, 'color.colorCurve', true) } : { endTint: tint(color.endTint, 'color.endTint') }) };
+  }
+  if (enabled.size) {
+    boolean(size.useScaleCurve, 'size.useScaleCurve');
+    modules.sizeOverLifetime = size.useScaleCurve ? { scaleCurve: curve(size.scaleCurve, 'size.scaleCurve') } : { endScaleFactor: size.endScaleFactor };
+  }
+  if (enabled.rotation) modules.rotationOverLifetime = { z: range(rotation.degreesPerSecond, 'rotation.degreesPerSecond', -Infinity, Infinity, true) };
   if (enabled.trails) {
-    for (const key of ['lifetime', 'minVertexDistance', 'width', 'breakDistance']) number(trails[key], `trails.${key}`, Number.MIN_VALUE);
-    number(trails.maxPointsPerTrail, 'trails.maxPointsPerTrail', 2, Number.MAX_SAFE_INTEGER, true);
-    number(trails.maxTrails, 'trails.maxTrails', 1, Number.MAX_SAFE_INTEGER, true);
-    boolean(trails.worldSpace, 'trails.worldSpace'); boolean(trails.dieWithParticles, 'trails.dieWithParticles');
-    if (trails.breakDistance < trails.minVertexDistance) throw new Error('trails.breakDistance must be >= minVertexDistance');
+    modules.trails = { lifetime: trails.lifetime, minVertexDistance: trails.minVertexDistance, width: trails.width,
+      maxPointsPerTrail: trails.maxPointsPerTrail, maxTrails: trails.maxTrails, breakDistance: trails.breakDistance,
+      worldSpace: trails.worldSpace, dieWithParticles: trails.dieWithParticles, textureMode: 'stretch' };
+    output.renderer.trail = { textureSet: choice(renderer.trailTexture, ASSETS.map((asset) => asset.id), 'renderer.trailTexture'),
+      blendMode: renderer.trailBlendMode, tint: tint(renderer.trailTint, 'renderer.trailTint'), alpha: renderer.trailAlpha };
   }
-  choice(renderer.texture, ASSETS.map((asset) => asset.id), 'renderer.texture');
-  choice(renderer.blendMode, ['normal', 'add'], 'renderer.blendMode');
-  const trailTint = enabled.trails ? tint(renderer.trailTint, 'renderer.trailTint') : undefined;
-  if (enabled.trails) {
-    choice(renderer.trailTexture, ASSETS.map((asset) => asset.id), 'renderer.trailTexture');
-    choice(renderer.trailBlendMode, ['normal', 'add'], 'renderer.trailBlendMode');
-    number(renderer.trailAlpha, 'renderer.trailAlpha', 0, 1);
-  }
+  return output;
+}
+
+function entity(id, layers, manual = false) {
+  if (!layers.length) return null;
+  const converted = layers.map((layer) => convertLayer(layer, manual));
+  const assetIds = new Set(converted.flatMap((layer) => [layer.renderer.textureSet, ...(layer.renderer.trail ? [layer.renderer.trail.textureSet] : [])]));
+  return validateParticleEntityConfig({ schemaVersion: 1, id,
+    textureSets: [...assetIds].map((asset) => ({ id: asset, textures: [{ asset }] })), layers: converted });
+}
+function transient(kind, preset) {
+  const layer = createPreset('embers');
+  Object.assign(layer, { id: kind, role: kind, label: kind });
+  Object.assign(layer.main, { startLifetime: pair(kind === 'flash' ? 0.18 : 0.65),
+    startSpeed: kind === 'flash' ? pair(10) : { min: 90, max: 180 }, startScale: { min: 0.18, max: kind === 'flash' ? 0.5 : 0.32 },
+    startTint: preset === 'energy-bolt' ? '#9ceaff' : '#ffc078' });
+  layer.shape.directionMode = 'outward'; layer.shape.spreadDegrees = 360;
+  layer.renderer.texture = preset === 'energy-bolt' ? 'smoke.soft' : kind === 'flash' ? 'fire.ember' : 'fire.spark';
+  if (preset === 'energy-bolt') layer.color.endTint = '#4fa7df';
+  layer.emission.burstCount = kind === 'flash' ? 7 : 32;
+  return entity(kind, [layer], true);
+}
+
+export function toRuntimeConfig(workspace) {
+  choice(workspace.mode, ['particle', 'projectile'], 'mode');
+  const { scene, host } = workspace;
   number(scene.gravityX, 'scene.gravityX'); number(scene.gravityY, 'scene.gravityY');
   tint(scene.background, 'scene.background'); boolean(scene.grid, 'scene.grid'); boolean(scene.followPointer, 'scene.followPointer');
   number(scene.timeScale, 'scene.timeScale', Number.MIN_VALUE);
-  if (enabled.emission) effect.emission = { rateOverTime: emission.rateOverTime };
-  if (enabled.shape) {
-    effect.shape = { shapeType: shape.shapeType, offsetX: shape.offsetX, offsetY: shape.offsetY, directionRadians: radians(shape.directionDegrees), spreadRadians: radians(shape.spreadDegrees) };
-    if (shape.shapeType === 'circle') effect.shape.radius = shape.radius;
-    if (shape.shapeType === 'rectangle') Object.assign(effect.shape, { width: shape.width, height: shape.height });
-  }
-  if (enabled.force) effect.forceOverLifetime = { ...force };
-  if (enabled.color) effect.colorOverLifetime = { endTint, endAlphaFactor: color.endAlphaFactor };
-  if (enabled.size) effect.sizeOverLifetime = { ...size };
-  if (enabled.rotation) effect.rotationOverLifetime = { z: radians(rotation.degreesPerSecond) };
-  if (enabled.trails) effect.trails = { ...trails, textureMode: 'stretch' };
-  compileParticleEffectConfig(effect);
-  return { effect, textureId: renderer.texture, blendMode: renderer.blendMode, gravity: { x: scene.gravityX, y: scene.gravityY },
-    ...(enabled.trails ? { trail: { textureId: renderer.trailTexture, blendMode: renderer.trailBlendMode, tint: trailTint, alpha: renderer.trailAlpha } } : {}) };
+  number(host.speed, 'host.speed', 100, 1000); number(host.loopDelay, 'host.loopDelay', 0, 5);
+  for (const key of ['loop', 'launchFlash', 'impact']) boolean(host[key], `host.${key}`);
+  if (!Array.isArray(workspace.layers) || !workspace.layers.length || workspace.layers.length > 8) throw new Error('workspace requires 1–8 layers');
+  const layers = workspace.layers.filter((layer) => boolean(layer.active, `${layer.id}.active`));
+  const projectile = workspace.mode === 'projectile';
+  return { mode: workspace.mode, config: entity(`${workspace.mode}-${workspace.preset}`, layers),
+    gravity: { x: scene.gravityX, y: scene.gravityY }, host: { ...host },
+    killLayerIds: projectile ? layers.filter((layer) => layer.role === 'head').map((layer) => layer.id) : [],
+    manualConfig: projectile ? null : entity('manual-burst', layers, true),
+    flashConfig: projectile && host.launchFlash ? transient('flash', workspace.preset) : null,
+    impactConfig: projectile && host.impact ? transient('impact', workspace.preset) : null };
 }
