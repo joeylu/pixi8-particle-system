@@ -3,7 +3,7 @@ import 'pixi.js/mesh';
 import { Application, Assets, Container } from 'pixi.js';
 import { createPixiParticleEntity } from 'geminant-particles/pixi';
 import { ASSETS } from './editor-model.js';
-import { stepFlight, sampleDuration } from './preview-flight.js';
+import { stepFlight, sampleFrame } from './preview-flight.js';
 
 export async function createParticlePreview(host, { onStats = () => {}, onError = () => {}, onEmitter = () => {}, onHandles = () => {} } = {}) {
   const app = new Application();
@@ -87,9 +87,9 @@ export async function createParticlePreview(host, { onStats = () => {}, onError 
   function up(event) { if (event.pointerId !== dragPointer) return; dragPointer = undefined; dragHandle = undefined; if (app.canvas.hasPointerCapture(event.pointerId)) app.canvas.releasePointerCapture(event.pointerId); }
   const listeners = [['pointerdown', down], ['pointermove', move], ['pointerup', up], ['pointercancel', up], ['lostpointercapture', up]]; listeners.forEach(([type, fn]) => app.canvas.addEventListener(type, fn));
   function advance(dt) {
-    let remaining = dt;
-    while (remaining > 0) {
-      const slice = Math.min(remaining, sampleDuration(packet?.mode === 'projectile' ? packet.host.speed : 0)); remaining -= slice;
+    // Equal slices avoid a final floating-point remainder too small for the SDK clock.
+    const { count, seconds: slice } = sampleFrame(dt, packet?.mode === 'projectile' ? packet.host.speed : 0);
+    for (let sample = 0; sample < count; sample++) {
       if (packet?.mode === 'projectile' && phase === 'flying') {
         const next = stepFlight(head, target, packet.host.speed, slice); head = next.point;
         if (current) { pose(current, head, next.angle); current.entity.update(slice); } handles();

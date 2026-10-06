@@ -3,6 +3,13 @@ export function sampleDuration(speed) {
   return Math.min(1 / 120, speed > 0 ? 4 / speed : 1 / 120);
 }
 
+export function sampleFrame(seconds, speed) {
+  const maximum = sampleDuration(speed);
+  if (!Number.isFinite(seconds) || seconds < 0) throw new RangeError('Frame seconds must be finite and nonnegative');
+  const count = Math.ceil(seconds / maximum);
+  return { count, seconds: count ? seconds / count : 0 };
+}
+
 export function stepFlight(point, target, speed, seconds) {
   sampleDuration(speed);
   if (!Number.isFinite(seconds) || seconds < 0) throw new RangeError('Flight seconds must be finite and nonnegative');

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <defs>
+    <linearGradient id="stone"><stop stop-color="#211f23"/><stop offset=".65" stop-color="#47342d"/><stop offset="1" stop-color="#85533a"/></linearGradient>
+    <linearGradient id="rim"><stop stop-color="#ff7429" stop-opacity=".2"/><stop offset=".6" stop-color="#ffb45a"/><stop offset="1" stop-color="#fff0ba"/></linearGradient>
+  </defs>
+  <path d="M19 17 41 10 61 14 76 26 86 45 80 68 66 82 43 87 23 78 11 57 12 35Z" fill="url(#stone)" stroke="#242024" stroke-width="2"/>
+  <path d="M19 17 41 10 38 34 12 35Z" fill="#514039"/>
+  <path d="M41 10 61 14 76 26 55 32 38 34Z" fill="#684a39"/>
+  <path d="M12 35 38 34 31 55 11 57Z" fill="#302b2b"/>
+  <path d="M38 34 55 32 67 50 51 65 31 55Z" fill="#483a34"/>
+  <path d="M11 57 31 55 43 87 23 78Z" fill="#211f22"/>
+  <path d="M51 65 67 50 80 68 66 82 43 87Z" fill="#523a2e"/>
+  <path d="M55 32 76 26 86 45 67 50Z" fill="#885839"/>
+  <path d="M28 29 34 26 41 29 42 36 36 42 28 39 25 34Z" fill="#211d1e"/>
+  <path d="M28 29 34 26 41 29" fill="none" stroke="#80614b" stroke-width="2"/>
+  <path d="M51 48 57 43 65 46 68 53 61 59 53 57Z" fill="#2c2321"/>
+  <path d="M51 48 57 43 65 46" fill="none" stroke="#9c6c44" stroke-width="1.5"/>
+  <path d="M25 66 32 61 39 66 36 74 28 74Z" fill="#17171b"/>
+  <path d="M45 15 43 23 48 31 44 44 48 52M73 55 65 64 58 66 57 77M17 45 24 49 26 56" fill="none" stroke="#17171b" stroke-width="2" stroke-linejoin="bevel"/>
+  <path d="M64 17 76 26 86 45 80 68 69 79" fill="none" stroke="url(#rim)" stroke-width="2.5" stroke-linejoin="bevel"/>
+</svg>

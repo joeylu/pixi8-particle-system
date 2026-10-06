@@ -150,7 +150,7 @@ function renderField(field, state) {
 
 function renderTextures(state) {
   const current = ASSETS.find((asset) => asset.id === state.renderer.texture);
-  return `<div class="texture-current"><img src="${escape(current.url)}" alt="${escape(current.label)}"><div><strong>${escape(current.label)}</strong><small>${current.width} × ${current.height} · PNG</small></div></div>${[...new Set(ASSETS.map((asset) => asset.family))].map((family) => `<h4 class="texture-family">${escape(family)}</h4><div class="texture-grid">${ASSETS.filter((asset) => asset.family === family).map((asset) => `<button type="button" class="texture-card" data-texture="${asset.id}" aria-label="Use ${escape(asset.label)} texture" aria-pressed="${asset.id === state.renderer.texture}"><img src="${escape(asset.url)}" alt="" loading="lazy"><span>${escape(asset.label)}</span></button>`).join('')}</div>`).join('')}`;
+  return `<div class="texture-current"><img src="${escape(current.url)}" alt="${escape(current.label)}"><div><strong>${escape(current.label)}</strong><small>${current.width} × ${current.height} · ${escape(current.format ?? 'PNG')}</small></div></div>${[...new Set(ASSETS.map((asset) => asset.family))].map((family) => `<h4 class="texture-family">${escape(family)}</h4><div class="texture-grid">${ASSETS.filter((asset) => asset.family === family).map((asset) => `<button type="button" class="texture-card" data-texture="${asset.id}" aria-label="Use ${escape(asset.label)} texture" aria-pressed="${asset.id === state.renderer.texture}"><img src="${escape(asset.url)}" alt="" loading="lazy"><span>${escape(asset.label)}</span></button>`).join('')}</div>`).join('')}`;
 }
 
 export function createInspector(host, { onChange, onInvalid }) {

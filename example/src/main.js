@@ -129,13 +129,15 @@ const inspector = createInspector($('inspector-modules'), {
   },
 });
 
-function choosePreset(id) {
+async function choosePreset(id) {
   state = createWorkspace(mode, id);
   workspaces[mode] = state;
+  const selectedWorkspace = state;
   refreshInspector();
   refreshScene();
   refreshLabels();
-  scheduleApply({ immediate: true });
+  await scheduleApply({ immediate: true });
+  if (!disposed && state === selectedWorkspace && ready) await action(() => preview.restart());
 }
 
 async function action(operation) {

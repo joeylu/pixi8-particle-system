@@ -164,7 +164,7 @@ body[data-mode="projectile"] .preset-grid { grid-template-columns: repeat(3, min
 .target-marker::before, .target-marker::after { content: ""; position: absolute; background: var(--mint); }
 .target-marker::before { width: 26px; height: 1px; left: -5px; top: 8px; }
 .target-marker::after { width: 1px; height: 26px; top: -5px; left: 8px; }
-.head-marker { width: 6px; height: 6px; border: 0; background: var(--mint); opacity: .8; }
+.head-marker { width: 6px; height: 6px; border: 0; background: transparent; }
 .projectile-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 11px 12px; margin-top: 8px; background: #1a211e; border: 1px solid var(--line); border-radius: 6px; }
 .host-actions, .host-options, .host-options label { display: flex; align-items: center; gap: 7px; }
 .host-options { gap: 12px; flex-wrap: wrap; }

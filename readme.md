@@ -23,9 +23,11 @@ Embers, water fountain, soft smoke and dust/debris, with emitter dragging and ma
 
 ### Projectile Lab
 
-Energy bolt, fireball and meteor, with layered heads/trails, movable endpoints and launch/hit controls.
+Energy bolt, fireball and meteor, with directional textures, layered heads/trails, movable endpoints and launch/hit controls.
 
-![Projectile Lab](example/screenshots/projectile-lab-2026-10-06.jpg)
+| Energy bolt | Fireball | Meteor |
+| --- | --- | --- |
+| ![Energy bolt](example/screenshots/energy-bolt-visual-2026-10-06.png) | ![Fireball](example/screenshots/fireball-visual-2026-10-06.png) | ![Meteor](example/screenshots/meteor-visual-2026-10-06.png) |
 
 ## Build and run
 

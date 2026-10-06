@@ -21,14 +21,14 @@ Open the local URL printed in the terminal.
 - Sliders, numeric inputs, selects and color controls rebuild the effect automatically, preserving paused/stopped transport state. The UI uses degrees; the model converts them to SDK radians.
 - Transport supports pause/resume, restart, stop-and-drain and 0.25–2× simulation speed. Finite effects automatically finish after particles and retained trails drain.
 - Particle: drag the emitter or use Follow pointer; four starting points are embers, water fountain, soft smoke and dust/debris. Manual bursts use independent fixed-pose entities, including when automatic emission is disabled.
-- Projectile: energy bolt, fireball and meteor presets each combine a local head with world sparks/smoke. Select a layer to edit or disable it independently. Launch/Hit now, speed, loop delay and optional launch flash/impact are host controls.
+- Projectile: energy bolt uses a pointed cyan head and narrow energy ribbon; fireball combines a white-hot core, flame envelope, tapered fire trail and sparse sparks; meteor combines a solid faceted rock, burning rim, flame trail, debris and a longer smoke wake. Select each layer to edit or disable it independently. Launch/Hit now, speed, loop delay and optional launch flash/impact are host controls. Projectile presets loop by default; selecting or resetting a preset starts a fresh preview.
 - Drag TARGET to redirect a live flight. Drag START ends a live flight at its current pose, keeps its remainder, and launches from the new source after draining. Center restores endpoint positions. Grid toggles the background.
 - On impact the host stops future emission and kills only head layer IDs through `entity.stop({killLayerIds})`; world smoke and retained ribbons continue draining. A loop waits for all effects to drain before its delay and next launch. Pause freezes flight and all effects.
-- Renderer offers all 11 supplied PNG textures and Normal/Additive blending. Trails has independent texture, color, opacity and blending controls.
+- Renderer offers the 11 supplied PNG textures plus six original SVG projectile materials, with Normal/Additive blending. Trails has independent texture, color, opacity and blending controls.
 - Invalid parameters show an error while preserving the last valid preview. Reset preset restores the selected starting point. Switching workspaces preserves their separate edited parameters in memory.
 - View JSON opens the active effect layers in the actual entity format; Copy JSON copies the validated configuration. Logical texture IDs resolve through `ASSETS`; scene/flight controls and separate flash/impact entities are not included in that effect JSON.
 
-The supplied textures are single-frame PNGs, so this editor does not expose texture-sheet animation or claim to cover all twelve Projectile families. Energy bolt uses a neutral existing texture so its cyan tint survives texture multiplication. Scene gravity defaults to `(0, 300)` px/s² and is editable; Main's Gravity modifier scales it for each layer. The demo host moves along sampled straight segments toward TARGET; particle gravity affects effect layers, not this host trajectory. Arrival/Hit now simulate a host hit event; this example implements no game collision detection. Editor values reset on page refresh.
+Materials are static single-frame PNGs and original SVGs rasterized by Pixi's asset loader, so this editor does not expose texture-sheet animation or claim to cover all twelve Projectile families. The SVG materials bake directional silhouettes, color and feathered alpha into the texture; they do not implement shader noise, UV scrolling or Bloom. Head art faces local +X. Ribbon art maps its transparent narrow end to the oldest point (u=0) and bright wider end to the newest (u=1); geometric trail width is constant. Trail lifetime is a multiplier of the head's 12-second lifetime. Scene gravity defaults to `(0, 300)` px/s² and is editable; Main's Gravity modifier scales it for each layer. The demo host moves along sampled straight segments toward TARGET; particle gravity affects effect layers, not this host trajectory. Arrival/Hit now simulate a host hit event; this example implements no game collision detection. Editor values reset on page refresh.
 
 ## Build and check
 
@@ -46,10 +46,11 @@ The local particle module uses the existing build artifacts in `../geminum-parti
 - `src/editor-model.js`: editor state, presets, asset catalog, validation and SDK conversion.
 - `src/inspector.js`: expandable modules and parameter controls.
 - `src/particle-preview.js`: WebGL drawing, entity lifecycle, separate transients, asynchronous replacement and endpoint interaction.
-- `src/preview-flight.js`: pure flight stepping and sampling interval; its tests cover arrival, zero distance and live redirection.
+- `src/preview-flight.js`: pure flight stepping and equal frame sampling; tests cover arrival, zero distance, live redirection and real SDK progress with awkward floating-point frame durations.
 - `src/main.js`: page coordination, configuration updates and error display.
 - `index.html` / `src/style.css`: layout and visual styling.
 - `src/assets/particles/`: runtime copies of the supplied PNGs; source `particle-library/` is unchanged.
+- `src/assets/projectiles/`: original directional SVG materials; dimensions, orientation and authorship are documented in its README.
 
 WebGL initialization, missing textures and render errors are reported explicitly. The preview does not substitute a white texture or silently switch rendering backends.
 

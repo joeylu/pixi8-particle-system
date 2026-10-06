@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="64" viewBox="0 0 128 64">
+  <defs>
+    <linearGradient id="outer"><stop stop-color="#ed3e12" stop-opacity="0"/><stop offset=".3" stop-color="#f54b13" stop-opacity=".16"/><stop offset=".7" stop-color="#ff7020" stop-opacity=".54"/><stop offset="1" stop-color="#ffae38" stop-opacity=".8"/></linearGradient>
+    <linearGradient id="hot"><stop stop-color="#ffaf27" stop-opacity="0"/><stop offset=".4" stop-color="#ffbe36" stop-opacity=".5"/><stop offset=".8" stop-color="#ffe682" stop-opacity=".95"/><stop offset="1" stop-color="#fff4c3"/></linearGradient>
+  </defs>
+  <path d="M0 32C22 34 30 25 45 28C58 30 60 18 76 21C90 24 98 13 128 6L128 58C108 49 99 54 84 44C70 37 66 45 50 37C31 31 24 37 0 32Z" fill="url(#outer)"/>
+  <path d="M7 32C33 29 43 35 57 29C78 18 97 29 128 16L128 48C106 41 88 46 73 38C55 32 32 35 7 32Z" fill="url(#outer)"/>
+  <path d="M0 32C41 34 62 26 82 29C101 32 112 23 128 22L128 43C109 37 103 42 86 35C60 32 35 34 0 32Z" fill="url(#hot)"/>
+  <path d="M30 31C58 25 65 35 88 30C105 26 117 31 128 28L128 35C115 33 103 35 87 33C68 29 56 33 30 31Z" fill="url(#hot)"/>
+  <path d="M17 26C39 22 47 27 61 20C82 12 98 18 128 8M33 42C54 46 61 39 82 47C98 53 116 48 128 55" fill="none" stroke="url(#outer)" stroke-width="1.5"/>
+</svg>

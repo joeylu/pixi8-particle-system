@@ -1,6 +1,12 @@
 import { validateParticleEntityConfig } from 'geminant-particles/config';
 
 export const ASSETS = [
+  ...[
+    ['bolt', 'bolt-head', 128, 64], ['fire-core', 'fire-core', 96, 64],
+    ['fire-shell', 'fire-shell', 128, 96], ['meteor', 'meteor-rock', 96, 96],
+    ['energy-ribbon', 'energy-ribbon', 128, 64], ['flame-ribbon', 'flame-ribbon', 128, 64],
+  ].map(([id, name, width, height]) => ({ id: `projectile.${id}`, label: name.replaceAll('-', ' '), family: 'projectile', format: 'SVG',
+    url: new URL(`./assets/projectiles/${name}.svg`, import.meta.url).href, width, height })),
   { id: 'fire.spark', label: 'Spark', family: 'fire', url: new URL('./assets/particles/fire/fire-spark.png', import.meta.url).href, width: 64, height: 64 },
   { id: 'fire.ember', label: 'Ember', family: 'fire', url: new URL('./assets/particles/fire/fire-ember.png', import.meta.url).href, width: 64, height: 64 },
   { id: 'fire.smoke', label: 'Light smoke', family: 'fire', url: new URL('./assets/particles/fire/fire-smoke.png', import.meta.url).href, width: 96, height: 96 },
@@ -81,9 +87,9 @@ export function createPreset(id = 'embers') {
 }
 
 export const PROJECTILE_PRESETS = [
-  { id: 'energy-bolt', label: 'Energy bolt', description: 'A soft cyan head with a thin retained ribbon', textureId: 'smoke.soft' },
-  { id: 'fireball', label: 'Fireball', description: 'An ember head shedding sparks and soft smoke', textureId: 'fire.ember' },
-  { id: 'meteor', label: 'Meteor', description: 'A debris head with a hot trail and lingering dust', textureId: 'dust.chip' },
+  { id: 'energy-bolt', label: 'Energy bolt', description: 'A pointed cyan bolt with a narrow energy ribbon', textureId: 'projectile.bolt' },
+  { id: 'fireball', label: 'Fireball', description: 'A white-hot core inside a broad flame shell with sparks', textureId: 'projectile.fire-core' },
+  { id: 'meteor', label: 'Meteor', description: 'A solid hot-rimmed rock with broad flame and smoky debris', textureId: 'projectile.meteor' },
 ];
 
 const pair = (value) => ({ min: value, max: value });
@@ -100,7 +106,7 @@ export function createWorkspace(mode = 'particle', presetId) {
   else {
     const material = presets.find((entry) => entry.id === preset).textureId;
     const head = createPreset(preset === 'meteor' ? 'dust' : 'embers');
-    Object.assign(head, { id: 'head', label: 'Projectile head', role: 'head' });
+    Object.assign(head, { id: 'head', label: preset === 'energy-bolt' ? 'Energy bolt head' : preset === 'fireball' ? 'White-hot core' : 'Meteor rock', role: 'head' });
     Object.assign(head.main, { maxParticles: 8, maxBirthsPerUpdate: 8, startLifetime: pair(12),
       startSpeed: pair(0), startScale: pair(preset === 'energy-bolt' ? 0.28 : 0.7),
       startRotation: pair(0), startAlpha: pair(1), simulationSpace: 'local', gravityModifier: 0,
@@ -129,11 +135,53 @@ export function createWorkspace(mode = 'particle', presetId) {
     }
     if (preset === 'meteor') { tail.renderer.texture = 'dust.puff'; tail.main.startTint = '#9c8065'; }
     if (preset === 'fireball') { tail.renderer.texture = 'fire.smoke'; tail.main.startTint = '#ad8c77'; }
-    layers = [tail, head];
+    // Colored projectile art uses neutral tint; the host owns its +X orientation.
+    head.main.startTint = '#ffffff';
+    head.main.maxParticles = 1; head.main.maxBirthsPerUpdate = 1;
+    head.renderer.trailTint = '#ffffff';
+    head.renderer.trailTexture = preset === 'energy-bolt' ? 'projectile.energy-ribbon' : 'projectile.flame-ribbon';
+    head.main.startScale = pair(preset === 'energy-bolt' ? 60 / 128 : 38 / 96);
+    head.main.startScaleAspect = { x: 1, y: preset === 'energy-bolt' ? 2 / 3 : preset === 'fireball' ? 26 / 64 / (38 / 96) : 1 };
+    Object.assign(head.trails, { lifetime: (preset === 'energy-bolt' ? 0.28 : 0.2) / 12,
+      width: preset === 'energy-bolt' ? 16 : 15, maxTrails: 4 });
+    tail.enabled.force = false; tail.enabled.rotation = false;
+    tail.emission.burstCount = 0;
+    if (preset === 'energy-bolt') {
+      tail.renderer.texture = 'smoke.soft'; tail.main.startLifetime = { min: 0.2, max: 0.4 };
+      tail.main.startScale = { min: 0.02, max: 0.04 };
+      tail.main.startAlpha = pair(0.65); tail.emission.rateOverTime = 12;
+      layers = [tail, head];
+    } else {
+      tail.main.startTint = preset === 'fireball' ? '#51443e' : '#b0a69a';
+      tail.main.startAlpha = pair(preset === 'fireball' ? 0.22 : 0.48);
+      tail.main.startLifetime = preset === 'fireball' ? { min: 0.6, max: 0.9 } : { min: 1.1, max: 1.5 };
+      tail.main.startScale = preset === 'fireball' ? { min: 0.16, max: 0.24 } : { min: 0.24, max: 0.36 };
+      tail.renderer.texture = preset === 'fireball' ? 'fire.smoke' : 'smoke.puff';
+      tail.emission.rateOverTime = preset === 'fireball' ? 16 : 22;
+      tail.color.endTint = preset === 'fireball' ? '#393635' : '#6a6b70';
+      tail.size.endScaleFactor = preset === 'fireball' ? 2.4 : 3;
+      const fragments = createPreset(preset === 'fireball' ? 'embers' : 'dust');
+      Object.assign(fragments, { id: preset === 'fireball' ? 'sparks' : 'debris',
+        label: preset === 'fireball' ? 'Fire sparks' : 'Rock fragments', role: 'tail' });
+      Object.assign(fragments.main, { startLifetime: preset === 'fireball' ? { min: 0.35, max: 0.65 } : { min: 0.45, max: 0.8 },
+        startSpeed: { min: 18, max: 45 }, startScale: { min: 0.045, max: 0.09 }, gravityModifier: 0 });
+      Object.assign(fragments.shape, { shapeType: 'circle', radius: 5, directionDegrees: 180, spreadDegrees: 70 });
+      Object.assign(fragments.emission, { rateOverTime: preset === 'fireball' ? 14 : 9, burstCount: 0 });
+      const shell = structuredClone(head);
+      Object.assign(shell, { id: 'shell', label: preset === 'fireball' ? 'Broad flame shell' : 'Meteor flame envelope' });
+      shell.renderer.texture = 'projectile.fire-shell'; shell.renderer.trailAlpha = 0.6;
+      shell.main.startScale = pair((preset === 'fireball' ? 70 : 80) / 128);
+      shell.main.startScaleAspect = { x: 1, y: (preset === 'fireball' ? 52 : 60) / 96 / shell.main.startScale.min };
+      shell.main.startAlpha = pair(preset === 'fireball' ? 0.8 : 0.75);
+      shell.trails.width = preset === 'fireball' ? 42 : 48;
+      shell.trails.lifetime = (preset === 'fireball' ? 0.38 : 0.55) / 12;
+      if (preset === 'meteor') { head.enabled.trails = false; head.renderer.blendMode = 'normal'; }
+      layers = [tail, fragments, shell, head];
+    }
   }
   return { mode, preset, selectedLayerId: layers.at(-1).id,
     scene: { gravityX: 0, gravityY: 300, background: '#10151d', grid: true, followPointer: false, timeScale: 1 },
-    host: { speed: 380, loop: false, loopDelay: 0.8, launchFlash: true, impact: true }, layers };
+    host: { speed: mode === 'projectile' ? 320 : 380, loop: mode === 'projectile', loopDelay: mode === 'projectile' ? 0.65 : 0.8, launchFlash: true, impact: true }, layers };
 }
 
 export function getSelectedLayer(workspace) {

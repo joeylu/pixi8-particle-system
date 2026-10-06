@@ -28,14 +28,24 @@ test('every preset emits real validated entity JSON without mutating workspace',
   assert.throws(() => createWorkspace('particle', 'fireball'), /Unknown preset/);
 });
 
-test('all eleven actual PNG resources match declared dimensions', () => {
-  assert.equal(ASSETS.length, 11);
-  assert.equal(new Set(ASSETS.map((asset) => asset.id)).size, 11);
-  for (const asset of ASSETS) {
+test('eleven PNG and six readable projectile SVG resources match declared dimensions', () => {
+  assert.equal(ASSETS.length, 17);
+  assert.equal(new Set(ASSETS.map((asset) => asset.id)).size, 17);
+  const pngs = ASSETS.filter((asset) => asset.family !== 'projectile');
+  assert.equal(pngs.length, 11);
+  for (const asset of pngs) {
     const bytes = readFileSync(new URL(asset.url));
     assert.equal(bytes.subarray(1, 4).toString(), 'PNG');
     assert.equal(bytes.readUInt32BE(16), asset.width);
     assert.equal(bytes.readUInt32BE(20), asset.height);
+  }
+  for (const asset of ASSETS.filter((entry) => entry.family === 'projectile')) {
+    const svg = readFileSync(new URL(asset.url), 'utf8');
+    assert.match(svg, /<svg\b/);
+    assert.match(svg, new RegExp(`width="${asset.width}"`));
+    assert.match(svg, new RegExp(`height="${asset.height}"`));
+    assert.match(svg, /<(path|ellipse|circle|rect)\b/);
+    assert.equal(svg.includes('\ufffd'), false);
   }
 });
 
@@ -46,7 +56,9 @@ test('workspaces retain independent values and selected layers are actual refere
   assert.equal(getSelectedLayer(projectile), projectile.layers[0]);
   assert.equal(createWorkspace().scene.gravityY, 300);
   assert.equal(createWorkspace().layers[0].main.startSpeed.min, 50);
-  assert.equal(createWorkspace('projectile').host.speed, 380);
+  assert.equal(createWorkspace('projectile').host.speed, 320);
+  assert.equal(createWorkspace('projectile').host.loop, true);
+  assert.equal(createWorkspace('projectile').host.loopDelay, 0.65);
   assert.equal(particle.host.speed, 380);
 });
 
@@ -55,24 +67,38 @@ test('heads are local single timed births with stable identity appearance and re
     const workspace = createWorkspace('projectile', preset.id);
     const packet = toRuntimeConfig(workspace);
     assert.equal(packet.manualConfig, null);
-    const head = packet.config.layers.find((layer) => layer.id === 'head');
-    const tail = packet.config.layers.find((layer) => layer.id === 'tail');
-    assert.equal(head.main.simulationSpace, 'local');
-    assert.deepEqual(head.main.startLifetime, { min: 12, max: 12 });
-    assert.deepEqual(head.main.startSpeed, { min: 0, max: 0 });
-    assert.deepEqual(head.modules.emission.bursts, [{ time: 0, count: 1 }]);
-    assert.equal(head.modules.emission.duration, 0);
-    assert.equal(head.modules.emission.rateOverTime, 0);
-    assert.deepEqual(head.modules.colorOverLifetime.alphaCurve, [{ t: 0, value: 1 }, { t: 1, value: 1 }]);
-    assert.deepEqual(head.modules.sizeOverLifetime.scaleCurve, [{ t: 0, value: 1 }, { t: 1, value: 1 }]);
-    assert.equal(head.modules.trails.worldSpace, true);
-    assert.equal(head.modules.trails.dieWithParticles, false);
-    assert.equal(head.modules.trails.lifetime, 0.035);
-    assert.equal(tail.main.simulationSpace, 'world');
-    assert.deepEqual(packet.killLayerIds, ['head']);
-    workspace.layers.find((layer) => layer.id === 'head').active = false;
+    const bodyIds = workspace.layers.filter((layer) => layer.role === 'head').map((layer) => layer.id);
+    assert.equal(workspace.selectedLayerId, 'head');
+    assert.ok(workspace.layers.length <= 8);
+    for (const head of packet.config.layers.filter((layer) => bodyIds.includes(layer.id))) {
+      assert.equal(head.main.simulationSpace, 'local');
+      assert.deepEqual(head.main.startLifetime, { min: 12, max: 12 });
+      assert.deepEqual(head.main.startSpeed, { min: 0, max: 0 });
+      assert.deepEqual(head.modules.emission.bursts, [{ time: 0, count: 1 }]);
+      assert.equal(head.modules.emission.duration, 0);
+      assert.equal(head.modules.emission.rateOverTime, 0);
+      assert.deepEqual(head.modules.colorOverLifetime.alphaCurve, [{ t: 0, value: 1 }, { t: 1, value: 1 }]);
+      assert.deepEqual(head.modules.sizeOverLifetime.scaleCurve, [{ t: 0, value: 1 }, { t: 1, value: 1 }]);
+      assert.equal(head.main.startTint, 0xffffff);
+      assert.equal(head.renderer.alignment, 'fixed');
+      assert.equal('rotationOverLifetime' in head.modules, false);
+      if (preset.id === 'meteor' && head.id === 'head') assert.equal(head.renderer.blendMode, 'normal');
+      if (head.modules.trails) {
+        assert.equal(head.modules.trails.worldSpace, true);
+        assert.equal(head.modules.trails.dieWithParticles, false);
+        const ttl = head.id === 'shell' ? (preset.id === 'meteor' ? 0.55 : 0.38) : preset.id === 'energy-bolt' ? 0.28 : 0.2;
+        assert.equal(head.modules.trails.lifetime, ttl / 12);
+      }
+    }
+    for (const tail of packet.config.layers.filter((layer) => !bodyIds.includes(layer.id))) {
+      assert.equal(tail.main.simulationSpace, 'world');
+      assert.equal(packet.killLayerIds.includes(tail.id), false);
+    }
+    assert.deepEqual(packet.killLayerIds, bodyIds);
+    for (const layer of workspace.layers.filter((layer) => layer.role === 'head')) layer.active = false;
     assert.deepEqual(toRuntimeConfig(workspace).killLayerIds, []);
-    assert.deepEqual(toRuntimeConfig(workspace).config.layers.map((layer) => layer.id), ['tail']);
+    assert.deepEqual(toRuntimeConfig(workspace).config.layers.map((layer) => layer.id),
+      workspace.layers.filter((layer) => layer.role === 'tail').map((layer) => layer.id));
   }
 });
 
